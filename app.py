@@ -46,9 +46,132 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# CSS tùy chỉnh cho giao diện trắng chuyên nghiệp
+# CSS tùy chỉnh cho giao diện trắng chuyên nghiệp + Chat Popup
 st.markdown("""
 <style>
+    /* Chat popup styling */
+    .chat-popup {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 350px;
+        height: 500px;
+        background: linear-gradient(145deg, #2c3e50, #34495e);
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        z-index: 1000;
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        border: 2px solid #FF6B6B;
+    }
+    
+    .chat-header {
+        background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
+        color: white;
+        padding: 15px;
+        text-align: center;
+        font-weight: bold;
+        position: relative;
+    }
+    
+    .chat-close {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: white;
+        font-size: 20px;
+        cursor: pointer;
+    }
+    
+    .chat-body {
+        flex: 1;
+        padding: 15px;
+        overflow-y: auto;
+        background: #f8f9fa;
+    }
+    
+    .chat-input {
+        padding: 15px;
+        background: white;
+        border-top: 1px solid #eee;
+    }
+    
+    /* Chat button */
+    .chat-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 5px 15px rgba(255,107,107,0.4);
+        z-index: 999;
+        color: white;
+        font-size: 24px;
+        transition: transform 0.3s ease;
+    }
+    
+    .chat-btn:hover {
+        transform: scale(1.1);
+    }
+    
+    /* Reset button styling */
+    .reset-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 998;
+    }
+    
+    .reset-btn {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 25px;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 5px 15px rgba(40,167,69,0.3);
+        transition: transform 0.3s ease;
+    }
+    
+    .reset-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 7px 20px rgba(40,167,69,0.4);
+    }
+    
+    /* Message styling */
+    .chat-message {
+        margin: 10px 0;
+        padding: 10px 15px;
+        border-radius: 15px;
+        max-width: 80%;
+        word-wrap: break-word;
+    }
+    
+    .user-message {
+        background: #007bff;
+        color: white;
+        margin-left: auto;
+        text-align: right;
+    }
+    
+    .jill-message {
+        background: #f1f3f4;
+        color: #333;
+        border-left: 4px solid #FF6B6B;
+    }
+    
+    /* Existing styles */
     .main-header {
         background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
         padding: 2rem;
@@ -112,6 +235,143 @@ st.markdown("""
         color: #2c3e50;
     }
 </style>
+
+<!-- Chat Button -->
+<div class="chat-btn" id="chatBtn" onclick="toggleChat()">
+    💬
+</div>
+
+<!-- Reset Button -->
+<div class="reset-container">
+    <button class="reset-btn" onclick="resetApp()">
+        🔄 Tạo Mới
+    </button>
+</div>
+
+<!-- Chat Popup -->
+<div class="chat-popup" id="chatPopup">
+    <div class="chat-header">
+        💖 Chat với Jill AI
+        <button class="chat-close" onclick="toggleChat()">×</button>
+    </div>
+    <div class="chat-body" id="chatBody">
+        <div class="jill-message chat-message">
+            Chào anh/chị! Em là Jill, trợ lý AI của anh Ken. 
+            Anh/chị có thể hỏi em bất cứ điều gì về trading và HFM nhé! 💕
+        </div>
+    </div>
+    <div class="chat-input">
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="chatInput" placeholder="Nhập tin nhắn..." 
+                   style="flex: 1; padding: 8px; border-radius: 20px; border: 1px solid #ddd;"
+                   onkeypress="handleChatEnter(event)">
+            <button onclick="sendMessage()" 
+                    style="background: #FF6B6B; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer;">
+                Gửi
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Chat functionality
+function toggleChat() {
+    const popup = document.getElementById('chatPopup');
+    const btn = document.getElementById('chatBtn');
+    
+    if (popup.style.display === 'none' || popup.style.display === '') {
+        popup.style.display = 'flex';
+        btn.style.display = 'none';
+    } else {
+        popup.style.display = 'none';
+        btn.style.display = 'flex';
+    }
+}
+
+function handleChatEnter(event) {
+    if (event.key === 'Enter') {
+        sendMessage();
+    }
+}
+
+function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const chatBody = document.getElementById('chatBody');
+    const message = input.value.trim();
+    
+    if (message) {
+        // Add user message
+        const userMsg = document.createElement('div');
+        userMsg.className = 'user-message chat-message';
+        userMsg.textContent = message;
+        chatBody.appendChild(userMsg);
+        
+        // Clear input
+        input.value = '';
+        
+        // Trigger Streamlit rerun with chat message
+        const chatData = {
+            type: 'chat_message',
+            message: message,
+            timestamp: new Date().toISOString()
+        };
+        
+        // Store in session storage for Streamlit to pick up
+        sessionStorage.setItem('jill_chat_message', JSON.stringify(chatData));
+        
+        // Scroll to bottom
+        chatBody.scrollTop = chatBody.scrollHeight;
+        
+        // Add typing indicator
+        const typingMsg = document.createElement('div');
+        typingMsg.className = 'jill-message chat-message';
+        typingMsg.id = 'typing-indicator';
+        typingMsg.innerHTML = '💭 Jill đang suy nghĩ...';
+        chatBody.appendChild(typingMsg);
+        chatBody.scrollTop = chatBody.scrollHeight;
+    }
+}
+
+function addJillResponse(response) {
+    const chatBody = document.getElementById('chatBody');
+    
+    // Remove typing indicator
+    const typing = document.getElementById('typing-indicator');
+    if (typing) typing.remove();
+    
+    const jillMsg = document.createElement('div');
+    jillMsg.className = 'jill-message chat-message';
+    jillMsg.innerHTML = response;
+    chatBody.appendChild(jillMsg);
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+function resetApp() {
+    if (confirm('Bạn có chắc muốn tạo mới phân tích? Tất cả dữ liệu hiện tại sẽ bị xóa.')) {
+        // Clear session storage
+        sessionStorage.setItem('jill_reset_app', 'true');
+        location.reload();
+    }
+}
+
+// Auto-scroll chat to bottom
+function scrollChatToBottom() {
+    const chatBody = document.getElementById('chatBody');
+    if (chatBody) {
+        chatBody.scrollTop = chatBody.scrollHeight;
+    }
+}
+
+// Initialize chat
+document.addEventListener('DOMContentLoaded', function() {
+    // Check for reset flag
+    if (sessionStorage.getItem('jill_reset_app') === 'true') {
+        sessionStorage.removeItem('jill_reset_app');
+        // Clear all Streamlit session state
+        window.parent.postMessage({ type: 'clear_session' }, '*');
+    }
+});
+</script>
 """, unsafe_allow_html=True)
 
 class JillAI:
@@ -751,10 +1011,353 @@ class JillAI:
             return ai_response
         else:
             return self.ask_ken_message(user_question)
+    
+    def analyze_trading_behavior(self, df_processed, customer_info):
+        """Phân tích hành vi giao dịch với AI"""
+        try:
+            # Tính toán các metrics cơ bản
+            metrics = self._calculate_trading_metrics(df_processed)
+            
+            # AI analysis
+            ai_analysis = self.ai_analyze_trading_behavior(df_processed, customer_info, metrics)
+            
+            # Determine trader type
+            trader_type = self._classify_trader_type(metrics, customer_info)
+            
+            # Comprehensive analysis result
+            analysis_result = {
+                'trader_type': trader_type,
+                'metrics': metrics,
+                'ai_insights': ai_analysis,
+                'recommendations': self._generate_recommendations(trader_type, metrics),
+                'risk_level': self._assess_risk_level(metrics),
+                'consultation_points': self._get_consultation_points(trader_type, metrics)
+            }
+            
+            return analysis_result
+            
+        except Exception as e:
+            st.error(f"Lỗi phân tích: {str(e)}")
+            return {'error': str(e)}
+    
+    def _calculate_trading_metrics(self, df):
+        """Tính toán metrics chi tiết"""
+        try:
+            total_trades = len(df)
+            winning_trades = len(df[df['Profit'] > 0])
+            win_rate = (winning_trades / total_trades * 100) if total_trades > 0 else 0
+            
+            total_profit = df[df['Profit'] > 0]['Profit'].sum()
+            total_loss = abs(df[df['Profit'] < 0]['Profit'].sum())
+            profit_factor = (total_profit / total_loss) if total_loss > 0 else float('inf')
+            
+            net_pnl = df['Profit'].sum()
+            
+            # Holding time analysis
+            if 'Close Time' in df.columns and 'Open Time' in df.columns:
+                df['Holding_Hours'] = (pd.to_datetime(df['Close Time']) - pd.to_datetime(df['Open Time'])).dt.total_seconds() / 3600
+                avg_holding_hours = df['Holding_Hours'].mean()
+                scalp_trades = len(df[df['Holding_Hours'] < 1])
+                scalp_ratio = (scalp_trades / total_trades * 100) if total_trades > 0 else 0
+            else:
+                avg_holding_hours = 0
+                scalp_ratio = 0
+            
+            # Asset distribution
+            if 'Item' in df.columns:
+                asset_dist = df['Item'].value_counts(normalize=True).head(3).to_dict()
+            else:
+                asset_dist = {}
+            
+            return {
+                'total_trades': total_trades,
+                'win_rate': win_rate,
+                'profit_factor': profit_factor,
+                'net_pnl': net_pnl,
+                'avg_holding_hours': avg_holding_hours,
+                'scalp_ratio': scalp_ratio,
+                'asset_distribution': asset_dist,
+                'avg_lot_size': df['Lots'].mean() if 'Lots' in df.columns else 0
+            }
+        except Exception as e:
+            return {'error': str(e)}
+    
+    def _classify_trader_type(self, metrics, customer_info):
+        """Phân loại trader dựa trên metrics"""
+        capital = customer_info.get('capital', 0)
+        experience = customer_info.get('experience_years', 0)
+        
+        # Rule-based classification
+        if capital < 5000 and metrics['scalp_ratio'] > 50:
+            return 'newbie_gambler'
+        elif experience >= 2 and metrics['profit_factor'] > 1.2:
+            return 'technical_trader'
+        elif capital >= 50000 and metrics['avg_holding_hours'] > 24:
+            return 'long_term_investor'
+        elif metrics['total_trades'] < 50 and experience < 2:
+            return 'part_time_trader'
+        else:
+            return 'specialist_trader'
+    
+    def _generate_recommendations(self, trader_type, metrics):
+        """Tạo khuyến nghị dựa trên trader type"""
+        recommendations = {
+            'newbie_gambler': [
+                "Giảm kích thước lệnh và đòn bẩy",
+                "Học quản lý rủi ro cơ bản", 
+                "Thực hành với demo account"
+            ],
+            'technical_trader': [
+                "Tối ưu hóa chiến lược hiện tại",
+                "Diversify portfolio",
+                "Sử dụng advanced tools"
+            ],
+            'long_term_investor': [
+                "Focus vào fundamental analysis",
+                "Portfolio balancing",
+                "Risk management for large capital"
+            ]
+        }
+        return recommendations.get(trader_type, ["Khuyến nghị chung cho trader"])
+    
+    def _assess_risk_level(self, metrics):
+        """Đánh giá mức độ rủi ro"""
+        risk_score = 0
+        
+        if metrics['profit_factor'] < 1.0:
+            risk_score += 3
+        if metrics['win_rate'] < 40:
+            risk_score += 2
+        if metrics['scalp_ratio'] > 70:
+            risk_score += 2
+            
+        if risk_score >= 5:
+            return "Rủi ro cao"
+        elif risk_score >= 3:
+            return "Rủi ro trung bình"
+        else:
+            return "Rủi ro thấp"
+    
+    def _get_consultation_points(self, trader_type, metrics):
+        """Lấy điểm tư vấn chính"""
+        return [
+            f"Trader type: {trader_type}",
+            f"Win rate: {metrics['win_rate']:.1f}%",
+            f"Profit factor: {metrics['profit_factor']:.2f}",
+            f"Risk level: {self._assess_risk_level(metrics)}"
+        ]
+    
+    def generate_consultation_script(self, analysis_result, customer_info):
+        """Tạo script tư vấn cá nhân hóa"""
+        try:
+            trader_type = analysis_result.get('trader_type', 'newbie_gambler')
+            metrics = analysis_result.get('metrics', {})
+            
+            # Use AI to generate script if available
+            if self.openai_client or self.anthropic_client or self.gemini_client:
+                return self.ai_generate_consultation_script(analysis_result, customer_info, metrics)
+            else:
+                # Fallback to template-based script
+                return self._fallback_consultation_script(analysis_result, customer_info)
+                
+        except Exception as e:
+            return f"Lỗi tạo script: {str(e)}"
+    
+    def suggest_promotions(self, trader_type, analysis_result, customer_info):
+        """Gợi ý chương trình khuyến mại phù hợp"""
+        promotions = {
+            'newbie_gambler': [
+                "🎓 Khóa học Trading miễn phí",
+                "📱 Demo account với $10,000 ảo",
+                "🛡️ Welcome bonus 30%",
+                "📞 1-on-1 coaching session"
+            ],
+            'technical_trader': [
+                "📊 Premium market analysis",
+                "🤖 Auto-trading signals",
+                "💰 Cashback 50% spread",
+                "📈 Advanced charting tools"
+            ],
+            'long_term_investor': [
+                "💎 VIP account upgrade",
+                "📋 Personal account manager",
+                "🏆 Reduced spreads",
+                "🎯 Institutional-grade execution"
+            ],
+            'part_time_trader': [
+                "⏰ Copy trading platform",
+                "📱 Mobile alerts setup",
+                "🎯 Weekend market access",
+                "💡 Economic calendar premium"
+            ],
+            'specialist_trader': [
+                "🔍 Specialized instruments",
+                "📊 Advanced analytics tools",
+                "🎯 Dedicated support line",
+                "💰 Volume-based discounts"
+            ]
+        }
+        
+        return promotions.get(trader_type, promotions['newbie_gambler'])
+    
+    def ask_ken_message(self, question):
+        """Message khi cần hỏi Ken"""
+        return f"""
+        💖 **Jill thông báo:**
+        
+        "Em xin lỗi, câu hỏi của anh/chị nằm ngoài phạm vi kiến thức của em:
+        
+        **Câu hỏi:** {question}
+        
+        Em sẽ chuyển cho anh Ken để được tư vấn chính xác nhất. 
+        Anh Ken sẽ liên hệ lại trong vòng 24h!
+        
+        *Cảm ơn anh/chị đã tin tưởng Jill! 💕*"
+        """
+    
+    def handle_chat_message(self, message):
+        """Xử lý tin nhắn chat từ popup"""
+        try:
+            # Use AI chat response if available
+            if self.openai_client or self.anthropic_client or self.gemini_client:
+                context = "User đang chat với Jill AI Agent trong app phân tích trading."
+                return self.ai_chat_response(message, context)
+            else:
+                # Fallback responses
+                return self._get_fallback_chat_response(message)
+        except Exception as e:
+            return f"Xin lỗi, em gặp lỗi kỹ thuật: {str(e)}"
+    
+    def _get_fallback_chat_response(self, message):
+        """Fallback chat responses khi không có AI"""
+        message_lower = message.lower()
+        
+        if any(word in message_lower for word in ['chào', 'hello', 'hi', 'xin chào']):
+            return "Chào anh/chị! Em là Jill, trợ lý AI của anh Ken. Em có thể giúp gì cho anh/chị? 💖"
+        
+        elif any(word in message_lower for word in ['trading', 'giao dịch', 'trade']):
+            return """
+            📊 **Về Trading:**
+            - Upload CSV để em phân tích hành vi giao dịch
+            - Em sẽ đánh giá trader type và đưa ra khuyến nghị
+            - Tạo script tư vấn cá nhân hóa cho khách hàng
+            
+            Anh/chị có muốn bắt đầu phân tích không? 🚀
+            """
+        
+        elif any(word in message_lower for word in ['hfm', 'broker', 'sàn']):
+            return """
+            🏢 **Về HFM:**
+            - Sàn giao dịch CFD uy tín quốc tế
+            - Đa dạng tài sản: Forex, Metals, Crypto, Indices
+            - Công cụ phân tích chuyên nghiệp
+            - Hỗ trợ khách hàng 24/7
+            
+            Em có thể tư vấn gói dịch vụ phù hợp nhé! 💼
+            """
+        
+        elif any(word in message_lower for word in ['cảm ơn', 'thank', 'thanks']):
+            return "Không có gì anh/chị! Em luôn sẵn sàng hỗ trợ. Có gì thắc mắc cứ hỏi em nhé! 🥰"
+        
+        elif any(word in message_lower for word in ['tạm biệt', 'bye', 'goodbye']):
+            return "Tạm biệt anh/chị! Chúc anh/chị trading thành công! Hẹn gặp lại! 👋💖"
+        
+        else:
+            return f"""
+            Em hiểu anh/chị muốn hỏi về: "{message}"
+            
+            Tuy nhiên câu hỏi này nằm ngoài phạm vi kiến thức của em. 
+            Em sẽ chuyển cho anh Ken để được tư vấn chính xác nhất.
+            
+            Trong lúc chờ đợi, anh/chị có thể:
+            - Upload CSV để phân tích trading
+            - Khám phá các tính năng của app
+            - Hỏi em về HFM và trading cơ bản
+            
+            💕 *Cảm ơn anh/chị!*
+            """
+
+# Initialize chat message handling
+if 'chat_messages' not in st.session_state:
+    st.session_state.chat_messages = []
+
+# Reset app functionality
+if 'reset_requested' not in st.session_state:
+    st.session_state.reset_requested = False
 
 # Khởi tạo Jill AI
 if 'jill' not in st.session_state:
     st.session_state.jill = JillAI()
+
+# Handle chat messages from popup
+chat_container = st.container()
+
+# JavaScript to handle chat message passing
+st.markdown("""
+<script>
+// Check for new chat messages
+function checkChatMessages() {
+    const chatData = sessionStorage.getItem('jill_chat_message');
+    if (chatData) {
+        const data = JSON.parse(chatData);
+        sessionStorage.removeItem('jill_chat_message');
+        
+        // Send to Streamlit
+        const event = new CustomEvent('jill_chat', { detail: data });
+        window.dispatchEvent(event);
+    }
+}
+
+// Check every 100ms for new messages
+setInterval(checkChatMessages, 100);
+
+// Handle Streamlit responses
+window.addEventListener('jill_response', function(event) {
+    if (typeof addJillResponse === 'function') {
+        addJillResponse(event.detail.response);
+    }
+});
+</script>
+""", unsafe_allow_html=True)
+
+# Process chat message if exists
+if st.query_params.get('chat_msg'):
+    chat_msg = st.query_params.get('chat_msg')
+    if chat_msg and chat_msg not in [msg['content'] for msg in st.session_state.chat_messages]:
+        # Add user message to history
+        st.session_state.chat_messages.append({
+            'role': 'user',
+            'content': chat_msg,
+            'timestamp': datetime.now()
+        })
+        
+        # Get Jill's response
+        jill_response = st.session_state.jill.handle_chat_message(chat_msg)
+        
+        # Add Jill's response to history
+        st.session_state.chat_messages.append({
+            'role': 'jill',
+            'content': jill_response,
+            'timestamp': datetime.now()
+        })
+        
+        # Send response back to popup
+        st.markdown(f"""
+        <script>
+        setTimeout(function() {{
+            if (typeof addJillResponse === 'function') {{
+                addJillResponse(`{jill_response.replace('`', '\\`')}`);
+            }}
+        }}, 100);
+        </script>
+        """, unsafe_allow_html=True)
+
+# Reset functionality
+if st.query_params.get('reset') == 'true':
+    # Clear all session state
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    st.rerun()
 
 # Header chính  
 st.markdown("""
@@ -1078,16 +1681,55 @@ if uploaded_file is not None:
         elif submit_info:
             st.warning("⚠️ Vui lòng điền tên khách hàng!")
 
-# Sidebar - Chat với Jill
+# Sidebar - Quick Chat & Reset
 st.sidebar.markdown("### 💬 Chat với Jill")
-user_question = st.sidebar.text_input("Hỏi Jill về gì đó...")
+st.sidebar.markdown("💡 *Sử dụng popup chat bên phải để trò chuyện chi tiết!*")
+
+# Quick reset button in sidebar
+if st.sidebar.button("🔄 Tạo Mới Phân Tích", type="primary"):
+    # Clear relevant session state
+    keys_to_clear = ['uploaded_data', 'analysis_result', 'customer_info', 'step']
+    for key in keys_to_clear:
+        if key in st.session_state:
+            del st.session_state[key]
+    st.success("✅ Đã tạo mới! Có thể phân tích khách hàng tiếp theo.")
+    st.rerun()
+
+# Chat history in sidebar (last 3 messages)
+if st.session_state.chat_messages:
+    st.sidebar.markdown("### 📝 Lịch sử chat gần đây")
+    recent_messages = st.session_state.chat_messages[-3:]
+    for msg in recent_messages:
+        if msg['role'] == 'user':
+            st.sidebar.markdown(f"👤 **You:** {msg['content'][:50]}...")
+        else:
+            st.sidebar.markdown(f"🤖 **Jill:** {msg['content'][:50]}...")
+
+# Instructions
+st.sidebar.markdown("""
+### 📋 Hướng dẫn sử dụng
+1. **Upload CSV** - Tải file giao dịch
+2. **Phân tích** - Để Jill phân tích hành vi
+3. **Thông tin KH** - Nhập thông tin khách hàng
+4. **Báo cáo** - Xem kết quả phân tích
+5. **Tư vấn** - Nhận script & khuyến mại
+
+💬 **Chat popup** - Click biểu tượng chat góc phải
+🔄 **Reset** - Nút "Tạo mới" để phân tích khách tiếp theo
+""")
+
+user_question = st.sidebar.text_input("Câu hỏi nhanh cho Jill...")
 
 if user_question:
-    # Kiểm tra xem câu hỏi có trong phạm vi kiến thức không
-    if any(keyword in user_question.lower() for keyword in ['trader', 'giao dịch', 'khách hàng', 'hfm', 'khuyến mại']):
-        st.sidebar.markdown("💖 Em sẽ trả lời dựa trên kiến thức đã học!")
-    else:
-        st.sidebar.markdown(st.session_state.jill.ask_ken_message(user_question))
+    # Process quick question
+    quick_response = st.session_state.jill.handle_chat_message(user_question)
+    st.sidebar.markdown(f"🤖 **Jill:** {quick_response}")
+    
+    # Add to chat history
+    st.session_state.chat_messages.extend([
+        {'role': 'user', 'content': user_question, 'timestamp': datetime.now()},
+        {'role': 'jill', 'content': quick_response, 'timestamp': datetime.now()}
+    ])
 
 # Footer
 st.markdown("""
