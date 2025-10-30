@@ -852,9 +852,9 @@ class JillAI:
         
         scripts = {
             "newbie_gambler": f"""
-            Chào {customer_info.get('name', 'anh/chị')}, em thấy anh/chị có phong cách giao dịch khá tích cực với {analysis_result['metrics']['total_trades']} lệnh. 
-            
-            Để bảo vệ tài khoản tốt hơn, em khuyên anh/chị:
+Chào {customer_info.get('name', 'anh/chị')}, em thấy anh/chị có phong cách giao dịch khá tích cực với {analysis_result['metrics']['total_trades']} lệnh. 
+
+Để bảo vệ tài khoản tốt hơn, em khuyên anh/chị:
             
             1. 🛡️ Giảm đòn bẩy xuống mức an toàn (1:50-1:100)
             2. ⛔ Đặt Stop Loss cho mọi lệnh (không quá 2% tài khoản) 
@@ -862,60 +862,60 @@ class JillAI:
             4. 🎯 Thực hành với demo account để rèn kỹ năng
             
             **Lý do:** Dữ liệu cho thấy tỷ lệ thắng hiện tại là {analysis_result['metrics']['win_rate']}% 
-            và Profit Factor {analysis_result['metrics']['profit_factor']}, cho thấy cần cải thiện quản lý rủi ro."
+và Profit Factor {analysis_result['metrics']['profit_factor']}, cho thấy cần cải thiện quản lý rủi ro.
             """,
             
             "technical_trader": f"""
-            "Chào {customer_info.get('name', 'anh/chị')}, em rất ấn tượng với phong cách giao dịch chuyên nghiệp của anh/chị! 
-            
-            Với tỷ lệ thắng {analysis_result['metrics']['win_rate']}% và Profit Factor {analysis_result['metrics']['profit_factor']}, 
-            em sẽ hỗ trợ anh/chị:
+Chào {customer_info.get('name', 'anh/chị')}, em rất ấn tượng với phong cách giao dịch chuyên nghiệp của anh/chị! 
+
+Với tỷ lệ thắng {analysis_result['metrics']['win_rate']}% và Profit Factor {analysis_result['metrics']['profit_factor']}, 
+em sẽ hỗ trợ anh/chị:
             
             1. 📊 Cung cấp phân tích kỹ thuật chuyên sâu hàng ngày
             2. 🎯 Tín hiệu giao dịch chất lượng cao từ team Research
             3. 📈 Trading Central premium access
             4. 🔧 Hỗ trợ API trading cho chiến lược tự động
             
-            **Lý do:** Trader kỹ thuật như anh/chị cần thông tin chính xác và kịp thời để tối ưu hiệu suất."
+            **Lý do:** Trader kỹ thuật như anh/chị cần thông tin chính xác và kịp thời để tối ưu hiệu suất.
             """,
             
             "long_term_investor": f"""
-            "Chào {customer_info.get('name', 'anh/chị')}, em thấy anh/chị có tầm nhìn đầu tư rất tốt với chiến lược dài hạn!
-            
-            Với vốn {customer_info.get('capital', 'lớn')} và phong cách kiên nhẫn, em sẽ đồng hành:
+Chào {customer_info.get('name', 'anh/chị')}, em thấy anh/chị có tầm nhìn đầu tư rất tốt với chiến lược dài hạn!
+
+Với vốn {customer_info.get('capital', 'lớn')} và phong cách kiên nhẫn, em sẽ đồng hành:
             
             1. 🏛️ Tư vấn xây dựng danh mục đa dạng hóa
             2. 📊 Báo cáo định kỳ về hiệu suất đầu tư  
             3. 🌍 Phân tích macro kinh tế và xu hướng dài hạn
             4. ⚖️ Islamic account không swap cho việc nắm giữ lâu
             
-            **Lý do:** Đầu tư dài hạn cần chiến lược tổng thể và thông tin macro quality."
+            **Lý do:** Đầu tư dài hạn cần chiến lược tổng thể và thông tin macro quality.
             """,
             
             "part_time_trader": f"""
-            "Chào {customer_info.get('name', 'anh/chị')}, em hiểu anh/chị bận công việc chính và muốn tối ưu thời gian trading.
-            
-            Em sẽ hỗ trợ tiện lợi tối đa:
+Chào {customer_info.get('name', 'anh/chị')}, em hiểu anh/chị bận công việc chính và muốn tối ưu thời gian trading.
+
+Em sẽ hỗ trợ tiện lợi tối đa:
             
             1. 📱 Tín hiệu giao dịch đơn giản qua SMS/App
             2. 🔔 Cảnh báo cơ hội khi có setup tốt
             3. 🤖 Copy Trading từ chuyên gia uy tín
             4. 📋 Báo cáo tóm tắt hiệu suất cuối tuần
             
-            **Lý do:** Trader bán thời gian cần sự tiện lợi và hiệu quả cao trong thời gian hạn chế."
+            **Lý do:** Trader bán thời gian cần sự tiện lợi và hiệu quả cao trong thời gian hạn chế.
             """,
             
             "specialist_trader": f"""
-            "Chào {customer_info.get('name', 'anh/chị')}, em thấy anh/chị rất am hiểu và tập trung vào thị trường chuyên biệt!
-            
-            Em sẽ cung cấp hỗ trợ chuyên sâu:
+Chào {customer_info.get('name', 'anh/chị')}, em thấy anh/chị rất am hiểu và tập trung vào thị trường chuyên biệt!
+
+Em sẽ cung cấp hỗ trợ chuyên sâu:
             
             1. 🎯 Thông tin độc quyền về thị trường anh/chị giao dịch
             2. 👥 Kết nối với cộng đồng trader chuyên nghiệp  
             3. 💎 Spread siêu thấp cho asset class ưa thích
             4. 📈 Market depth data và phân tích institutional
             
-            **Lý do:** Specialist trader cần thông tin chất lượng cao và mạng lưới chuyên môn."
+            **Lý do:** Specialist trader cần thông tin chất lượng cao và mạng lưới chuyên môn.
             """
         }
         
