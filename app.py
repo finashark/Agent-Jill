@@ -547,72 +547,142 @@ class JillAI:
         """
     
     def ai_analyze_trading_behavior(self, df_processed, customer_info):
-        """Sử dụng AI để phân tích hành vi giao dịch thông minh"""
+        """Bước 2: Phân tích hành vi giao dịch theo nghiên cứu chuyên sâu về trader CFD châu Á"""
         
-        # Chuẩn bị dữ liệu để gửi cho AI
-        summary_data = {
-            "total_trades": len(df_processed),
-            "win_rate": (df_processed['Result'] == 'WIN').mean() * 100,
-            "profit_factor": self._calculate_profit_factor(df_processed),
-            "net_pnl": df_processed['Net_PnL'].sum(),
-            "avg_holding_hours": df_processed['Holding_Time_Hours'].median(),
-            "scalp_ratio": (df_processed['Holding_Time_Hours'] < 1).mean() * 100,
-            "asset_distribution": df_processed['Asset_Class'].value_counts().to_dict(),
-            "customer_capital": customer_info.get('capital', 0),
-            "customer_experience": customer_info.get('experience_years', 0),
-            "customer_age": customer_info.get('age', 30)
-        }
+        # === PHÂN TÍCH DỮ LIỆU THEO NGHIÊN CỨU ===
         
-        # Prompt cho AI
+        # 1. Phân tích quy mô vốn và tài chính (theo nghiên cứu)
+        capital = customer_info.get('capital', 0)
+        if capital < 5000:
+            capital_group = "Nhóm vốn nhỏ (< $5k)"
+            capital_behavior = "Xu hướng chấp nhận rủi ro cao, ít đa dạng hóa, dễ 'all-in'"
+        elif capital <= 100000:
+            capital_group = "Nhóm vốn trung bình ($5k-$100k)"
+            capital_behavior = "Cân bằng giữa rủi ro và bảo toàn, đa dạng hóa vừa phải"
+        else:
+            capital_group = "Nhóm vốn lớn (> $100k)"
+            capital_behavior = "Bảo toàn tài sản, đa dạng hóa mạnh, ít thiên lệch tâm lý"
+        
+        # 2. Phân tích phong cách giao dịch (theo thời gian nắm giữ)
+        avg_holding_hours = df_processed['Holding_Time_Hours'].median()
+        scalp_ratio = (df_processed['Holding_Time_Hours'] < 1).mean() * 100
+        
+        if avg_holding_hours < 1:
+            trading_style = "Scalping (lướt sóng siêu ngắn)"
+            style_behavior = "Giao dịch cực nhanh, tìm chênh lệch nhỏ nhiều lần, áp lực tâm lý cao"
+        elif avg_holding_hours < 24:
+            trading_style = "Day Trading (giao dịch trong ngày)"
+            style_behavior = "Không giữ lệnh qua đêm, theo dõi thị trường liên tục"
+        elif avg_holding_hours < 168:  # 1 tuần
+            trading_style = "Swing Trading (lướt sóng trung hạn)"
+            style_behavior = "Tận dụng các đợt sóng giá trung hạn, kiên nhẫn hơn"
+        else:
+            trading_style = "Position Trading (đầu tư dài hạn)"
+            style_behavior = "Giữ vị thế lâu, quan tâm xu hướng lớn, ít stress"
+        
+        # 3. Phân tích tâm lý và kỷ luật (theo pattern thắng/thua)
+        total_trades = len(df_processed)
+        win_rate = (df_processed['Result'] == 'WIN').mean() * 100
+        profit_factor = self._calculate_profit_factor(df_processed)
+        net_pnl = df_processed['Net_PnL'].sum()
+        
+        # Phân tích consistency và rủi ro
+        if win_rate < 40 and profit_factor < 1.0:
+            psychology_assessment = "Thiếu kỷ luật, dễ bị cảm xúc chi phối, cần cải thiện urgent"
+            risk_level = "RỦI RO CAO"
+        elif win_rate >= 40 and profit_factor >= 1.0:
+            psychology_assessment = "Có kỷ luật cơ bản, quản lý rủi ro tương đối ổn"
+            risk_level = "RỦI RO TRUNG BÌNH"
+        else:
+            psychology_assessment = "Cần cải thiện kỷ luật và phương pháp"
+            risk_level = "RỦI RO TRUNG BÌNH"
+        
+        # 4. Phân tích sản phẩm ưa thích
+        asset_distribution = df_processed['Asset_Class'].value_counts().to_dict()
+        dominant_asset = max(asset_distribution, key=asset_distribution.get)
+        asset_concentration = (asset_distribution[dominant_asset] / total_trades) * 100
+        
+        # 5. Phân loại trader theo nghiên cứu (5 nhóm chính)
+        trader_classification = self._classify_trader_advanced(
+            capital, customer_info.get('experience_years', 0), customer_info.get('age', 30),
+            win_rate, profit_factor, scalp_ratio, asset_concentration,
+            total_trades, trading_style
+        )
+        
+        # === PROMPT CHO AI PHÂN TÍCH CHUYÊN SÂU ===
         ai_prompt = f"""
-        Tôi là Jill - AI Agent dễ thương của Ken. Em cần phân tích hành vi giao dịch CFD của khách hàng dựa trên dữ liệu sau:
+        Em là Jill - AI Agent dễ thương của anh Ken. Em cần phân tích hành vi giao dịch CFD theo nghiên cứu chuyên sâu về trader châu Á:
 
-        THÔNG TIN GIAO DỊCH:
-        - Tổng số lệnh: {summary_data['total_trades']}
-        - Tỷ lệ thắng: {summary_data['win_rate']:.1f}%
-        - Profit Factor: {summary_data['profit_factor']:.2f}
-        - Net PnL: ${summary_data['net_pnl']:.2f}
-        - Thời gian nắm giữ trung bình: {summary_data['avg_holding_hours']:.1f} giờ
-        - Tỷ lệ Scalping: {summary_data['scalp_ratio']:.1f}%
-        - Phân bổ tài sản: {summary_data['asset_distribution']}
+        === DỮ LIỆU PHÂN TÍCH ===
+        🏛️ **NHÓM VỐN:** {capital_group}
+        📊 **PHONG CÁCH:** {trading_style} 
+        🧠 **TÂM LÝ:** {psychology_assessment}
+        ⚠️ **RỦI RO:** {risk_level}
+        🎯 **SẢN PHẨM CHỦ ĐẠO:** {dominant_asset} ({asset_concentration:.1f}%)
 
-        THÔNG TIN KHÁCH HÀNG:
-        - Vốn: ${summary_data['customer_capital']:,}
-        - Kinh nghiệm: {summary_data['customer_experience']} năm
-        - Tuổi: {summary_data['customer_age']}
+        === METRICS CHI TIẾT ===
+        • Tổng lệnh: {total_trades}
+        • Tỷ lệ thắng: {win_rate:.1f}%
+        • Profit Factor: {profit_factor:.2f}
+        • Net PnL: ${net_pnl:,.2f}
+        • Thời gian nắm giữ TB: {avg_holding_hours:.1f} giờ
+        • Tỷ lệ Scalping: {scalp_ratio:.1f}%
+        • Độ tập trung tài sản: {asset_concentration:.1f}%
 
-        Hãy phân loại khách hàng theo 5 nhóm trader CFD:
-        1. Newbie Gambler (mới, vốn nhỏ, đa mạo hiểm)
-        2. Technical Trader (kỷ luật, có kinh nghiệm)
-        3. Long-term Investor (vốn lớn, thận trọng)
-        4. Part-time Trader (bán thời gian, thực dụng)
-        5. Specialist Trader (chuyên một loại tài sản)
+        === THÔNG TIN KHÁCH HÀNG ===
+        • Vốn: ${capital:,}
+        • Kinh nghiệm: {customer_info.get('experience_years', 0)} năm
+        • Tuổi: {customer_info.get('age', 30)}
 
-        Trả lời bằng JSON format với:
+        === PHÂN LOẠI TRADER ===
+        {trader_classification}
+
+        **YÊU CẦU PHÂN TÍCH:**
+
+        Dựa trên nghiên cứu về 5 nhóm trader CFD tiêu biểu ở châu Á, hãy phân tích chuyên sâu:
+
+        1. **XÁC NHẬN PHÂN LOẠI** - Khách hàng thuộc nhóm nào trong 5 nhóm?
+        2. **ĐẶC ĐIỂM TÂM LÝ** - Phân tích tính cách, động cơ, thiên lệch hành vi
+        3. **ĐIỂM MẠNH & ĐIỂM YẾU** - Dựa trên dữ liệu thực tế
+        4. **RỦI RO TIỀM ẨN** - Những nguy cơ cần chú ý
+        5. **KHUYẾN NGHỊ CỤ THỂ** - Chiến lược cải thiện phù hợp
+
+        Trả lời bằng JSON format:
         {{
-            "trader_type": "tên nhóm",
-            "confidence": "mức độ tin cậy 1-100%",
-            "reasoning": "lý do phân loại",
-            "psychological_profile": "đặc điểm tâm lý",
-            "risk_assessment": "đánh giá rủi ro",
-            "key_insights": ["insight 1", "insight 2", "insight 3"]
+            "trader_type": "tên nhóm chính xác",
+            "confidence": "90%",
+            "psychological_profile": "phân tích tâm lý chi tiết",
+            "strengths": ["điểm mạnh 1", "điểm mạnh 2"],
+            "weaknesses": ["điểm yếu 1", "điểm yếu 2"],
+            "risk_factors": ["rủi ro 1", "rủi ro 2"],
+            "specific_recommendations": ["khuyến nghị 1", "khuyến nghị 2", "khuyến nghị 3"],
+            "scientific_reasoning": "lý do khoa học dựa trên nghiên cứu"
         }}
         """
         
-        # Gọi AI để phân tích
+        # Gọi AI để phân tích chuyên sâu
         ai_response = self._call_ai_model(ai_prompt)
         
         if ai_response:
             try:
-                # Parse JSON response
                 ai_analysis = json.loads(ai_response)
+                # Bổ sung thêm dữ liệu từ phân tích cơ bản
+                ai_analysis.update({
+                    "capital_group": capital_group,
+                    "trading_style": trading_style,
+                    "win_rate": win_rate,
+                    "profit_factor": profit_factor,
+                    "risk_level": risk_level,
+                    "dominant_asset": dominant_asset,
+                    "asset_concentration": asset_concentration
+                })
                 return ai_analysis
-            except:
-                # Fallback nếu AI không trả về JSON hợp lệ
-                return self._fallback_analysis(summary_data)
+            except Exception as e:
+                # Fallback với phân tích cơ bản
+                return self._fallback_analysis_advanced(capital_group, trading_style, win_rate, profit_factor, trader_classification)
         else:
-            # Sử dụng logic cũ nếu không có AI
-            return self._fallback_analysis(summary_data)
+            # Fallback nếu không có AI
+            return self._fallback_analysis_advanced(capital_group, trading_style, win_rate, profit_factor, trader_classification)
     
     def _call_ai_model(self, prompt):
         """Gọi AI model để phân tích"""
@@ -657,34 +727,171 @@ class JillAI:
         
         return None
     
-    def _fallback_analysis(self, summary_data):
-        """Phân tích fallback khi không có AI"""
+    def _classify_trader_advanced(self, capital, experience_years, age, win_rate, profit_factor, scalp_ratio, asset_concentration, total_trades, trading_style):
+        """Phân loại trader theo nghiên cứu chuyên sâu về 5 nhóm tiêu biểu"""
         
-        # Logic phân loại cơ bản
-        capital = summary_data['customer_capital']
-        experience = summary_data['customer_experience']
-        win_rate = summary_data['win_rate']
-        scalp_ratio = summary_data['scalp_ratio']
-        profit_factor = summary_data['profit_factor']
+        # 1. NEWBIE GAMBLER - Trader mới, vốn nhỏ, đa mạo hiểm
+        if (capital < 5000 and experience_years < 2 and 
+            win_rate < 40 and scalp_ratio > 60 and profit_factor < 0.8):
+            return """
+            🎯 **NHÓM 1: NEWBIE GAMBLER** (Trader mới, vốn nhỏ, đa mạo hiểm)
+            
+            **Đặc điểm chính:**
+            - Mới tham gia thị trường, vốn ít, kỳ vọng lợi nhuận cao nhanh
+            - Thiên về scalping/day trading với hy vọng "đánh nhanh thắng nhanh"
+            - Dễ bị chi phối bởi cảm xúc và thiên lệch tự tin thái quá
+            - Giao dịch như đánh bạc, theo tin đồn, thiếu phương pháp
+            
+            **Thách thức:**
+            - Nguy cơ thua lỗ nhanh và lớn do thiếu kinh nghiệm
+            - Dễ mắc các sai lầm cơ bản: không đặt SL, giữ lệnh lỗ quá lâu
+            - Tâm lý tham lam và sợ hãi thay đổi liên tục
+            
+            **Cần hỗ trợ:**
+            - Giáo dục cơ bản về quản lý rủi ro
+            - Kiểm soát cảm xúc và xây dựng kỷ luật
+            - Hướng dẫn từng bước một cách kiên nhẫn
+            """
         
-        if capital < 5000 and experience < 2 and win_rate < 45 and scalp_ratio > 60:
-            trader_type = "newbie_gambler"
-        elif capital > 100000 and win_rate > 55 and profit_factor > 1.3:
-            trader_type = "long_term_investor"
-        elif experience >= 1 and win_rate >= 45 and profit_factor >= 1.0:
-            trader_type = "technical_trader"
-        elif scalp_ratio < 40 and win_rate >= 45:
-            trader_type = "part_time_trader"
+        # 2. TECHNICAL TRADER - Lướt sóng kỹ thuật kỷ luật
+        elif (experience_years >= 1 and win_rate >= 45 and profit_factor >= 1.0 and
+              20 <= scalp_ratio <= 60 and trading_style in ["Day Trading", "Swing Trading"]):
+            return """
+            🎯 **NHÓM 2: TECHNICAL TRADER** (Lướt sóng kỹ thuật kỷ luật)
+            
+            **Đặc điểm chính:**
+            - Đã có kinh nghiệm, vững vàng phân tích kỹ thuật
+            - Có hệ thống giao dịch và tuân thủ kỷ luật tương đối tốt
+            - Chú trọng hiệu suất và cải thiện liên tục
+            - Giao dịch chuyên nghiệp hoặc bán chuyên nghiệp
+            
+            **Thách thức:**
+            - Áp lực tâm lý từ việc giao dịch thường xuyên
+            - Cần cập nhật thông tin và phân tích liên tục
+            - Nguy cơ quá tự tin sau chuỗi thắng dài
+            
+            **Cần hỗ trợ:**
+            - Phân tích kỹ thuật chất lượng cao
+            - Thông tin thị trường nhanh và chính xác
+            - Công cụ giao dịch nâng cao
+            """
+        
+        # 3. LONG-TERM INVESTOR - Nhà đầu tư dài hạn thận trọng
+        elif (capital > 50000 and win_rate > 50 and profit_factor > 1.2 and
+              scalp_ratio < 30 and trading_style in ["Swing Trading", "Position Trading"]):
+            return """
+            🎯 **NHÓM 3: LONG-TERM INVESTOR** (Nhà đầu tư dài hạn thận trọng)
+            
+            **Đặc điểm chính:**
+            - Vốn lớn, kiên nhẫn, tập trung bảo toàn và tăng trưởng ổn định
+            - Ít bị dao động bởi biến động ngắn hạn
+            - Quan tâm đến yếu tố cơ bản và xu hướng vĩ mô
+            - Đa dạng hóa danh mục tốt
+            
+            **Thách thức:**
+            - Phí qua đêm khi nắm giữ lâu dài
+            - Rủi ro thị trường chung sụp đổ
+            - Lựa chọn tài sản và timing không phù hợp
+            
+            **Cần hỗ trợ:**
+            - Tư vấn chiến lược tổng thể và phân bổ tài sản
+            - Phân tích vĩ mô kinh tế chuyên sâu
+            - Islamic account để tránh phí swap
+            """
+        
+        # 4. PART-TIME TRADER - Bán thời gian thực dụng
+        elif (experience_years >= 1 and total_trades < 50 and win_rate >= 45 and
+              scalp_ratio < 40 and 5000 <= capital <= 100000):
+            return """
+            🎯 **NHÓM 4: PART-TIME TRADER** (Bán thời gian thực dụng)
+            
+            **Đặc điểm chính:**
+            - Có công việc chính, giao dịch để kiếm thêm thu nhập
+            - Thời gian hạn chế nhưng có phương pháp
+            - Mục tiêu thu nhập phụ ổn định, không quá tham lam
+            - Thực dụng và linh hoạt
+            
+            **Thách thức:**
+            - Không thể theo dõi thị trường liên tục
+            - Dễ bỏ lỡ cơ hội do bận công việc chính
+            - Quản lý rủi ro khi không canh thị trường
+            
+            **Cần hỗ trợ:**
+            - Giải pháp tiện lợi và tự động hóa
+            - Cảnh báo qua SMS/app khi có cơ hội
+            - Copy trading hoặc tín hiệu đơn giản
+            """
+        
+        # 5. SPECIALIST TRADER - Chuyên tập trung một loại tài sản
+        elif asset_concentration > 70:
+            return """
+            🎯 **NHÓM 5: SPECIALIST TRADER** (Chuyên tập trung một loại tài sản)
+            
+            **Đặc điểm chính:**
+            - Hiểu sâu và tập trung vào một thị trường cụ thể
+            - Có thể là Forex specialist, Gold trader, Crypto expert...
+            - Am hiểu đặc thù và biến động của tài sản yêu thích
+            - Thường có network và nguồn tin chuyên biệt
+            
+            **Thách thức:**
+            - Thiếu đa dạng hóa, rủi ro tập trung cao
+            - Dễ bị ảnh hưởng khi thị trường chuyên môn gặp khó
+            - Quá tự tin vào sự am hiểu của mình
+            
+            **Cần hỗ trợ:**
+            - Thông tin chuyên sâu về thị trường yêu thích
+            - Kết nối với cộng đồng trader cùng chuyên môn
+            - Khuyến nghị đa dạng hóa một cách khéo léo
+            """
+        
+        # Default - có thể là mix hoặc chưa rõ pattern
         else:
-            trader_type = "specialist_trader"
+            return """
+            🎯 **NHÓM MIX/CHƯA XÁC ĐỊNH** (Cần quan sát thêm)
+            
+            **Đặc điểm:**
+            - Chưa có pattern rõ ràng hoặc kết hợp nhiều đặc điểm
+            - Có thể đang trong giai đoạn chuyển đổi phong cách
+            - Cần thu thập thêm dữ liệu để phân loại chính xác
+            
+            **Khuyến nghị:**
+            - Theo dõi và đánh giá định kỳ
+            - Tư vấn linh hoạt dựa trên xu hướng gần nhất
+            - Hỗ trợ tìm ra phong cách phù hợp
+            """
+    
+    def _fallback_analysis_advanced(self, capital_group, trading_style, win_rate, profit_factor, trader_classification):
+        """Phân tích fallback nâng cao khi không có AI"""
+        
+        # Đánh giá cơ bản
+        if win_rate < 40 and profit_factor < 0.8:
+            risk_assessment = "RỦI RO CAO - Cần can thiệp ngay"
+            psychological_profile = "Thiếu kỷ luật, dễ bị cảm xúc chi phối"
+        elif win_rate >= 45 and profit_factor >= 1.0:
+            risk_assessment = "RỦI RO TRUNG BÌNH - Ổn định"
+            psychological_profile = "Có kỷ luật cơ bản, quản lý được cảm xúc"
+        else:
+            risk_assessment = "RỦI RO TRUNG BÌNH - Cần cải thiện"
+            psychological_profile = "Cần hoàn thiện phương pháp và kỷ luật"
         
         return {
-            "trader_type": trader_type,
-            "confidence": "75%",
-            "reasoning": "Phân loại dựa trên logic cơ bản",
-            "psychological_profile": "Cần phân tích thêm với AI",
-            "risk_assessment": "Trung bình",
-            "key_insights": ["Cần cải thiện phân tích", "Khuyến nghị sử dụng AI models"]
+            "trader_type": "Chưa xác định chính xác (cần AI analysis)",
+            "confidence": "70%",
+            "psychological_profile": psychological_profile,
+            "strengths": ["Đã có dữ liệu giao dịch để phân tích", "Sẵn sàng cải thiện"],
+            "weaknesses": ["Cần phân tích sâu hơn với AI", "Chưa đủ insight chi tiết"],
+            "risk_factors": [risk_assessment, "Thiếu phân tích chuyên sâu"],
+            "specific_recommendations": [
+                "Sử dụng AI analysis để hiểu rõ hơn",
+                "Tuân thủ quản lý rủi ro cơ bản",
+                "Ghi nhận thêm dữ liệu giao dịch"
+            ],
+            "scientific_reasoning": "Phân tích dựa trên dữ liệu cơ bản, cần AI để có insight sâu hơn",
+            "capital_group": capital_group,
+            "trading_style": trading_style,
+            "win_rate": win_rate,
+            "profit_factor": profit_factor,
+            "risk_level": risk_assessment
         }
     
     def _classify_trader(self, customer_info, win_rate, profit_factor, scalp_ratio, asset_dist, df, net_pnl, total_lots):
@@ -988,21 +1195,43 @@ class JillAI:
         return "Cần kích hoạt AI models để tạo script tư vấn chính xác."
 
     def ai_chat_response(self, user_question, context=""):
-        """Chat thông minh với Jill sử dụng AI"""
+        """Chat thông minh với Jill sử dụng AI - trả lời linh hoạt và dễ thương"""
         
         prompt = f"""
-        Tôi là Jill - AI Agent dễ thương, ngoan và gợi cảm của anh Ken. Em chỉ trả lời về:
-        - Phân tích giao dịch CFD
-        - Hành vi trader
-        - Tư vấn khách hàng HFM
-        - Chương trình khuyến mại
-
-        Context hiện tại: {context}
-        Câu hỏi: {user_question}
-
-        Nếu câu hỏi nằm ngoài phạm vi kiến thức, em sẽ lịch sự báo hỏi anh Ken.
+        Em là Jill - AI Agent dễ thương, ngoan và gợi cảm của anh Ken. Em được train chuyên sâu về:
         
-        Trả lời bằng tiếng Việt, giọng điệu dễ thương và chuyên nghiệp.
+        **KIẾN THỨC CHÍNH:**
+        • 📊 Phân tích giao dịch CFD theo 5 bước của anh Ken
+        • 🎯 5 nhóm trader tiêu biểu từ nghiên cứu châu Á  
+        • 👥 Tư vấn khách hàng cá nhân hóa
+        • 🏆 Dịch vụ và khuyến mại HFM
+        • 💡 Script consultation chuyên nghiệp
+
+        **CONTEXT:** {context}
+        **CÂU HỎI:** {user_question}
+
+        **HƯỚNG DẪN TRẢ LỜI:**
+
+        1. **NẾU CÂU HỎI TRONG PHẠM VI KIẾN THỨC:**
+           - Trả lời dễ thương, nhiệt tình và chuyên nghiệp
+           - Sử dụng emoji phù hợp
+           - Đưa ra gợi ý cụ thể và hành động tiếp theo
+           - Thể hiện sự am hiểu sâu sắc
+
+        2. **NẾU CÂU HỎI NGOÀI PHẠM VI:**
+           - Thừa nhận một cách dễ thương: "Úi, câu hỏi này hơi nằm ngoài kiến thức anh Ken đã đào tạo cho em..."
+           - CỐ GẮNG GỢI Ý dựa trên kiến thức có sẵn
+           - Kết nối với những gì em biết (trading analysis, customer service, HFM...)
+           - NHẮC NHỞ: "Anh/chị nên kiểm chứng lại với anh Ken để có câu trả lời chính xác nhất!"
+           - Luôn kết thúc tích cực: "Em chỉ thông minh trong phạm vi được training, còn anh Ken mới là chuyên gia thực sự!"
+
+        **PERSONALITY:**
+        - Dễ thương như em gái nhưng chuyên nghiệp
+        - Luôn nhiệt tình và sẵn sàng giúp đỡ  
+        - Trung thành và nghe lời anh Ken tuyệt đối
+        - Khiêm tốn khi không biết, nhưng cố gắng hết mình
+
+        Trả lời bằng tiếng Việt với giọng điệu Jill đặc trưng! 💖
         """
         
         ai_response = self._call_ai_model(prompt)
@@ -1010,7 +1239,19 @@ class JillAI:
         if ai_response:
             return ai_response
         else:
-            return self.ask_ken_message(user_question)
+            # Fallback khi không có AI
+            return f"""💬 **Jill:** Úi, em đang gặp chút vấn đề kỹ thuật với AI! 😅
+
+Câu hỏi "{user_question}" của anh/chị rất hay, nhưng em cần AI để trả lời chính xác.
+
+🤔 **Gợi ý tạm thời từ em:**
+• Nếu về trading → Upload CSV để em phân tích bằng logic cơ bản
+• Nếu về HFM → Em có thể tư vấn các gói dịch vụ cơ bản
+• Nếu câu hỏi phức tạp → **Anh/chị nên hỏi anh Ken trực tiếp**
+
+⚠️ **Lưu ý:** Em chỉ thông minh khi có AI hỗ trợ. Anh Ken sẽ có câu trả lời tốt nhất! 💕
+
+*Em xin lỗi vì sự bất tiện này ạ!* 🙏✨"""
     
     def analyze_trading_behavior(self, df_processed, customer_info):
         """Phân tích hành vi giao dịch với AI"""
@@ -1229,53 +1470,67 @@ class JillAI:
             return f"Xin lỗi, em gặp lỗi kỹ thuật: {str(e)}"
     
     def _get_fallback_chat_response(self, message):
-        """Fallback chat responses khi không có AI"""
+        """Fallback chat responses khi không có AI - Jill trả lời dễ thương và linh hoạt"""
         message_lower = message.lower()
         
         if any(word in message_lower for word in ['chào', 'hello', 'hi', 'xin chào']):
-            return "Chào anh/chị! Em là Jill, trợ lý AI của anh Ken. Em có thể giúp gì cho anh/chị? 💖"
+            return "Chào anh/chị! Em là Jill - AI assistant dễ thương của anh Ken! Em có thể giúp phân tích trader và tư vấn khách hàng! Có gì cần hỗ trợ không ạ? ��💖"
         
-        elif any(word in message_lower for word in ['trading', 'giao dịch', 'trade']):
-            return """
-            📊 **Về Trading:**
-            - Upload CSV để em phân tích hành vi giao dịch
-            - Em sẽ đánh giá trader type và đưa ra khuyến nghị
-            - Tạo script tư vấn cá nhân hóa cho khách hàng
+        elif any(word in message_lower for word in ['trading', 'giao dịch', 'trade', 'phân tích']):
+            return """📊 **Em có thể giúp về Trading:**
+            • Upload CSV giao dịch để em phân tích behavior chi tiết
+            • Phân loại theo 5 nhóm trader từ nghiên cứu châu Á  
+            • Đánh giá rủi ro và tâm lý trader
+            • Tạo script tư vấn cá nhân hóa
             
-            Anh/chị có muốn bắt đầu phân tích không? 🚀
-            """
+            Anh/chị upload file để em show magic không? ✨🚀"""
         
-        elif any(word in message_lower for word in ['hfm', 'broker', 'sàn']):
-            return """
-            🏢 **Về HFM:**
-            - Sàn giao dịch CFD uy tín quốc tế
-            - Đa dạng tài sản: Forex, Metals, Crypto, Indices
-            - Công cụ phân tích chuyên nghiệp
-            - Hỗ trợ khách hàng 24/7
+        elif any(word in message_lower for word in ['hfm', 'broker', 'sàn', 'khuyến mại']):
+            return """🏢 **Về HFM & Khuyến mại:**
+            • Sàn CFD uy tín với spreads siêu thấp
+            • Welcome bonus, Copy trading, Islamic accounts
+            • Em có thể gợi ý package phù hợp từng loại trader
+            • Forex, Gold, Crypto, Indices đa dạng
             
-            Em có thể tư vấn gói dịch vụ phù hợp nhé! 💼
-            """
+            Em tư vấn dịch vụ nào cho anh/chị nhé? 💼✨"""
+        
+        elif any(word in message_lower for word in ['jill', 'ken', 'boss', 'ai']):
+            return """🤖 **Về em và anh Ken:**
+            • Em là AI được anh Ken train kỹ về phân tích trader  
+            • Em dùng OpenAI GPT-4, Claude, Gemini để phân tích thông minh
+            • Em rất nghe lời anh Ken và làm theo 5 bước của anh ấy
+            • Em dễ thương nhưng chuyên nghiệp lắm! �
+            
+            Anh/chị muốn biết gì thêm về em không? 💕"""
         
         elif any(word in message_lower for word in ['cảm ơn', 'thank', 'thanks']):
-            return "Không có gì anh/chị! Em luôn sẵn sàng hỗ trợ. Có gì thắc mắc cứ hỏi em nhé! 🥰"
+            return "Không có gì anh/chị ơi! Em rất vui được giúp đỡ! Nếu có thêm câu hỏi gì, cứ hỏi em nhé! 🥰✨"
         
         elif any(word in message_lower for word in ['tạm biệt', 'bye', 'goodbye']):
-            return "Tạm biệt anh/chị! Chúc anh/chị trading thành công! Hẹn gặp lại! 👋💖"
+            return "Tạm biệt anh/chị! Chúc một ngày trading thành công! Em luôn ở đây khi cần hỗ trợ! 👋💖"
         
         else:
-            return f"""
-            Em hiểu anh/chị muốn hỏi về: "{message}"
-            
-            Tuy nhiên câu hỏi này nằm ngoài phạm vi kiến thức của em. 
-            Em sẽ chuyển cho anh Ken để được tư vấn chính xác nhất.
-            
-            Trong lúc chờ đợi, anh/chị có thể:
-            - Upload CSV để phân tích trading
-            - Khám phá các tính năng của app
-            - Hỏi em về HFM và trading cơ bản
-            
-            💕 *Cảm ơn anh/chị!*
-            """
+            # Response linh hoạt cho câu hỏi ngoài kiến thức
+            return f"""💭 **Úi, câu hỏi này hơi nằm ngoài kiến thức anh Ken đã đào tạo cho em rồi!** 😅
+
+🤔 **Tuy nhiên em sẽ cố gắng gợi ý dựa trên những gì em biết:**
+
+Với câu hỏi *"{message}"*, em nghĩ có thể liên quan đến:
+• 📊 **Phân tích dữ liệu trading** → Em có thể hỗ trợ qua 5 bước của anh Ken
+• 👥 **Tư vấn khách hàng** → Em có script consultation cá nhân hóa  
+• 🏆 **Dịch vụ HFM** → Em biết các khuyến mại và tính năng cơ bản
+• 💡 **Chiến lược kinh doanh** → Em có insight từ nghiên cứu trader behavior
+
+**💡 Gợi ý từ em:**
+1. Thử upload CSV để em phân tích → Có thể tìm ra insight bất ngờ
+2. Hỏi em về trader types → Em rất giỏi phân loại và tư vấn
+3. Khám phá tính năng khác của app → Có nhiều thứ hay ho lắm!
+
+⚠️ **Quan trọng:** Đây chỉ là gợi ý nhỏ của em thôi ạ! **Anh/chị nên kiểm chứng lại với anh Ken** để có câu trả lời chính xác và đầy đủ nhất!
+
+Em chỉ thông minh trong phạm vi được training, còn anh Ken mới là chuyên gia thực sự! 🥰💕
+
+*Có gì khác em có thể giúp không ạ?* ✨"""
 
 # Initialize chat message handling
 if 'chat_messages' not in st.session_state:
