@@ -1104,12 +1104,7 @@ Câu hỏi "{user_question}" của anh/chị rất hay, nhưng em cần AI để
             analysis_result = {
                 'trader_type': trader_type,
                 'metrics': metrics,
-                'trading_style': {
-                    'scalp': round((metrics.get('scalp_ratio', 0)), 1),
-                    'intraday': round((100 - metrics.get('scalp_ratio', 0)) * 0.6, 1),
-                    'swing': round((100 - metrics.get('scalp_ratio', 0)) * 0.3, 1),
-                    'position': round((100 - metrics.get('scalp_ratio', 0)) * 0.1, 1)
-                },
+                'trading_style': metrics.get('trading_style', {'scalp': 0, 'intraday': 0, 'swing': 0, 'position': 0}),
                 'ai_insights': ai_analysis,
                 'recommendations': self._generate_recommendations(trader_type, metrics),
                 'risk_level': self._assess_risk_level(metrics),
@@ -1135,29 +1130,18 @@ Câu hỏi "{user_question}" của anh/chị rất hay, nhưng em cần AI để
             
             net_pnl = df['Profit'].sum()
             
-            # Holding time analysis
+            # Holding time analysis và Trading style
             if 'Close Time' in df.columns and 'Open Time' in df.columns:
                 df['Holding_Hours'] = (pd.to_datetime(df['Close Time']) - pd.to_datetime(df['Open Time'])).dt.total_seconds() / 3600
                 avg_holding_hours = df['Holding_Hours'].mean()
-                scalp_trades = len(df[df['Holding_Hours'] < 1])
-                scalp_ratio = (scalp_trades / total_trades * 100) if total_trades > 0 else 0
-            else:
-                avg_holding_hours = 0
-                scalp_ratio = 0
-            
-            # Asset distribution
-            if 'Item' in df.columns:
-                asset_dist = df['Item'].value_counts(normalize=True).head(3).to_dict()
-            else:
-                asset_dist = {}
-            
-            # Trading style analysis
-            if 'Close Time' in df.columns and 'Open Time' in df.columns:
-                df['Holding_Hours'] = (pd.to_datetime(df['Close Time']) - pd.to_datetime(df['Open Time'])).dt.total_seconds() / 3600
+                
+                # Count by time periods
                 scalp_count = len(df[df['Holding_Hours'] < 1])
                 intraday_count = len(df[(df['Holding_Hours'] >= 1) & (df['Holding_Hours'] < 8)])
                 swing_count = len(df[(df['Holding_Hours'] >= 8) & (df['Holding_Hours'] < 168)])
                 position_count = len(df[df['Holding_Hours'] >= 168])
+                
+                scalp_ratio = (scalp_count / total_trades * 100) if total_trades > 0 else 0
                 
                 trading_style = {
                     'scalp': round((scalp_count / total_trades * 100), 1) if total_trades > 0 else 0,
@@ -1166,7 +1150,15 @@ Câu hỏi "{user_question}" của anh/chị rất hay, nhưng em cần AI để
                     'position': round((position_count / total_trades * 100), 1) if total_trades > 0 else 0
                 }
             else:
+                avg_holding_hours = 0
+                scalp_ratio = 0
                 trading_style = {'scalp': 0, 'intraday': 0, 'swing': 0, 'position': 0}
+            
+            # Asset distribution
+            if 'Item' in df.columns:
+                asset_dist = df['Item'].value_counts(normalize=True).head(3).to_dict()
+            else:
+                asset_dist = {}
             
             return {
                 'total_trades': total_trades,
@@ -1176,6 +1168,7 @@ Câu hỏi "{user_question}" của anh/chị rất hay, nhưng em cần AI để
                 'avg_holding_hours': round(avg_holding_hours, 1),
                 'scalp_ratio': round(scalp_ratio, 1),
                 'total_lots': round(df['Lots'].sum(), 1) if 'Lots' in df.columns else 0,
+                'trading_style': trading_style,
                 'asset_distribution': asset_dist,
                 'avg_lot_size': round(df['Lots'].mean(), 2) if 'Lots' in df.columns else 0
             }
@@ -1745,8 +1738,15 @@ if st.sidebar.button("� Gửi tin nhắn") and user_message:
         'timestamp': datetime.now().strftime("%H:%M")
     })
     
-    # Generate Jill's response
-    jill_response = f"Em hiểu câu hỏi của anh/chị về '{user_message}'. Dựa trên kinh nghiệm phân tích trading, em khuyên anh/chị nên quản lý rủi ro tốt và theo dõi tỷ lệ thắng thua. Có gì khác em có thể giúp không ạ? 💕"
+    # Generate Jill's response using AI
+    try:
+        # Use AI chat if available
+        if 'jill' in st.session_state:
+            jill_response = st.session_state.jill.ai_chat_response(user_message, "User đang chat với Jill AI trong app phân tích trading.")
+        else:
+            jill_response = f"Em hiểu câu hỏi của anh/chị về '{user_message}'. Dựa trên kinh nghiệm phân tích trading, em khuyên anh/chị nên quản lý rủi ro tốt và theo dõi tỷ lệ thắng thua. Có gì khác em có thể giúp không ạ? 💕"
+    except Exception as e:
+        jill_response = f"Xin lỗi anh/chị, em gặp chút vấn đề kỹ thuật: {str(e)}. Anh/chị thử hỏi lại sau nhé! 💕"
     
     st.session_state.chat_messages.append({
         'role': 'assistant', 
