@@ -46,84 +46,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# CSS tùy chỉnh cho giao diện trắng chuyên nghiệp + Chat Popup
+# CSS tùy chỉnh cho giao diện trắng chuyên nghiệp
 st.markdown("""
 <style>
-    /* Chat popup styling */
-    .chat-popup {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        width: 350px;
-        height: 500px;
-        background: linear-gradient(145deg, #2c3e50, #34495e);
-        border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        z-index: 1000;
-        display: none;
-        flex-direction: column;
-        overflow: hidden;
-        border: 2px solid #FF6B6B;
-    }
-    
-    .chat-header {
-        background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
-        color: white;
-        padding: 15px;
-        text-align: center;
-        font-weight: bold;
-        position: relative;
-    }
-    
-    .chat-close {
-        position: absolute;
-        right: 10px;
-        top: 50%;
-        transform: translateY(-50%);
-        background: none;
-        border: none;
-        color: white;
-        font-size: 20px;
-        cursor: pointer;
-    }
-    
-    .chat-body {
-        flex: 1;
-        padding: 15px;
-        overflow-y: auto;
-        background: #f8f9fa;
-    }
-    
-    .chat-input {
-        padding: 15px;
-        background: white;
-        border-top: 1px solid #eee;
-    }
-    
-    /* Chat button */
-    .chat-btn {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        width: 60px;
-        height: 60px;
-        background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 5px 15px rgba(255,107,107,0.4);
-        z-index: 999;
-        color: white;
-        font-size: 24px;
-        transition: transform 0.3s ease;
-    }
-    
-    .chat-btn:hover {
-        transform: scale(1.1);
-    }
-    
     /* Reset button styling */
     .reset-container {
         position: fixed;
@@ -147,28 +72,6 @@ st.markdown("""
     .reset-btn:hover {
         transform: translateY(-2px);
         box-shadow: 0 7px 20px rgba(40,167,69,0.4);
-    }
-    
-    /* Message styling */
-    .chat-message {
-        margin: 10px 0;
-        padding: 10px 15px;
-        border-radius: 15px;
-        max-width: 80%;
-        word-wrap: break-word;
-    }
-    
-    .user-message {
-        background: #007bff;
-        color: white;
-        margin-left: auto;
-        text-align: right;
-    }
-    
-    .jill-message {
-        background: #f1f3f4;
-        color: #333;
-        border-left: 4px solid #FF6B6B;
     }
     
     /* Existing styles */
@@ -236,11 +139,6 @@ st.markdown("""
     }
 </style>
 
-<!-- Chat Button -->
-<div class="chat-btn" id="chatBtn" onclick="toggleChat()">
-    💬
-</div>
-
 <!-- Reset Button -->
 <div class="reset-container">
     <button class="reset-btn" onclick="resetApp()">
@@ -248,104 +146,7 @@ st.markdown("""
     </button>
 </div>
 
-<!-- Chat Popup -->
-<div class="chat-popup" id="chatPopup">
-    <div class="chat-header">
-        💖 Chat với Jill AI
-        <button class="chat-close" onclick="toggleChat()">×</button>
-    </div>
-    <div class="chat-body" id="chatBody">
-        <div class="jill-message chat-message">
-            Chào anh/chị! Em là Jill, trợ lý AI của anh Ken. 
-            Anh/chị có thể hỏi em bất cứ điều gì về trading và HFM nhé! 💕
-        </div>
-    </div>
-    <div class="chat-input">
-        <div style="display: flex; gap: 10px;">
-            <input type="text" id="chatInput" placeholder="Nhập tin nhắn..." 
-                   style="flex: 1; padding: 8px; border-radius: 20px; border: 1px solid #ddd;"
-                   onkeypress="handleChatEnter(event)">
-            <button onclick="sendMessage()" 
-                    style="background: #FF6B6B; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer;">
-                Gửi
-            </button>
-        </div>
-    </div>
-</div>
-
 <script>
-// Chat functionality
-function toggleChat() {
-    const popup = document.getElementById('chatPopup');
-    const btn = document.getElementById('chatBtn');
-    
-    if (popup.style.display === 'none' || popup.style.display === '') {
-        popup.style.display = 'flex';
-        btn.style.display = 'none';
-    } else {
-        popup.style.display = 'none';
-        btn.style.display = 'flex';
-    }
-}
-
-function handleChatEnter(event) {
-    if (event.key === 'Enter') {
-        sendMessage();
-    }
-}
-
-function sendMessage() {
-    const input = document.getElementById('chatInput');
-    const chatBody = document.getElementById('chatBody');
-    const message = input.value.trim();
-    
-    if (message) {
-        // Add user message
-        const userMsg = document.createElement('div');
-        userMsg.className = 'user-message chat-message';
-        userMsg.textContent = message;
-        chatBody.appendChild(userMsg);
-        
-        // Clear input
-        input.value = '';
-        
-        // Trigger Streamlit rerun with chat message
-        const chatData = {
-            type: 'chat_message',
-            message: message,
-            timestamp: new Date().toISOString()
-        };
-        
-        // Store in session storage for Streamlit to pick up
-        sessionStorage.setItem('jill_chat_message', JSON.stringify(chatData));
-        
-        // Scroll to bottom
-        chatBody.scrollTop = chatBody.scrollHeight;
-        
-        // Add typing indicator
-        const typingMsg = document.createElement('div');
-        typingMsg.className = 'jill-message chat-message';
-        typingMsg.id = 'typing-indicator';
-        typingMsg.innerHTML = '💭 Jill đang suy nghĩ...';
-        chatBody.appendChild(typingMsg);
-        chatBody.scrollTop = chatBody.scrollHeight;
-    }
-}
-
-function addJillResponse(response) {
-    const chatBody = document.getElementById('chatBody');
-    
-    // Remove typing indicator
-    const typing = document.getElementById('typing-indicator');
-    if (typing) typing.remove();
-    
-    const jillMsg = document.createElement('div');
-    jillMsg.className = 'jill-message chat-message';
-    jillMsg.innerHTML = response;
-    chatBody.appendChild(jillMsg);
-    chatBody.scrollTop = chatBody.scrollHeight;
-}
-
 function resetApp() {
     if (confirm('Bạn có chắc muốn tạo mới phân tích? Tất cả dữ liệu hiện tại sẽ bị xóa.')) {
         // Clear session storage
@@ -1051,7 +852,7 @@ class JillAI:
         
         scripts = {
             "newbie_gambler": f"""
-            "Chào {customer_info.get('name', 'anh/chị')}, em thấy anh/chị có phong cách giao dịch khá tích cực với {analysis_result['metrics']['total_trades']} lệnh. 
+            Chào {customer_info.get('name', 'anh/chị')}, em thấy anh/chị có phong cách giao dịch khá tích cực với {analysis_result['metrics']['total_trades']} lệnh. 
             
             Để bảo vệ tài khoản tốt hơn, em khuyên anh/chị:
             
@@ -1573,102 +1374,6 @@ if 'reset_requested' not in st.session_state:
 if 'jill' not in st.session_state:
     st.session_state.jill = JillAI()
 
-# Handle chat messages from popup
-chat_container = st.container()
-
-# JavaScript to handle chat message passing
-st.markdown("""
-<script>
-// Check for new chat messages
-function checkChatMessages() {
-    const chatData = sessionStorage.getItem('jill_chat_message');
-    if (chatData) {
-        const data = JSON.parse(chatData);
-        sessionStorage.removeItem('jill_chat_message');
-        
-        // Send to Streamlit
-        const event = new CustomEvent('jill_chat', { detail: data });
-        window.dispatchEvent(event);
-    }
-}
-
-// Check every 100ms for new messages
-setInterval(checkChatMessages, 100);
-
-// Handle Streamlit responses
-window.addEventListener('jill_response', function(event) {
-    if (typeof addJillResponse === 'function') {
-        addJillResponse(event.detail.response);
-    }
-});
-</script>
-""", unsafe_allow_html=True)
-
-# Chat popup functionality với JavaScript handling đơn giản
-st.markdown("""
-<script>
-// Simple chat message handling
-function sendChatMessage() {
-    const input = document.getElementById('chatInput');
-    const message = input.value.trim();
-    
-    if (message) {
-        // Add user message to chat
-        addUserMessage(message);
-        
-        // Clear input
-        input.value = '';
-        
-        // Get Jill's response (simulate for now)
-        setTimeout(() => {
-            const response = getJillResponse(message);
-            addJillResponse(response);
-        }, 500);
-    }
-}
-
-function getJillResponse(message) {
-    const msg = message.toLowerCase();
-    
-    // Simple keyword responses
-    if (msg.includes('xin chào') || msg.includes('hello') || msg.includes('hi')) {
-        return "💖 **Jill:** Chào anh/chị! Em là Jill - AI assistant dễ thương của anh Ken! Em có thể giúp phân tích trader và tư vấn khách hàng! Có gì cần hỗ trợ không ạ? 😊";
-    }
-    
-    if (msg.includes('trading') || msg.includes('giao dịch') || msg.includes('phân tích')) {
-        return "💖 **Jill:** Em có thể giúp anh/chị phân tích hành vi giao dịch qua 5 bước của anh Ken: Upload CSV → Phân tích behavior → Thu thập info AM → Báo cáo nhận định → Script tư vấn! 📊✨";
-    }
-    
-    if (msg.includes('hfm') || msg.includes('khuyến mại')) {
-        return "💖 **Jill:** HFM có nhiều dịch vụ tuyệt vời: spreads thấp, execution nhanh, hỗ trợ 24/7, và nhiều khuyến mại hấp dẫn! Em có thể tư vấn cụ thể theo nhu cầu! 🏆";
-    }
-    
-    if (msg.includes('ken') || msg.includes('boss')) {
-        return "💖 **Jill:** Anh Ken là boss tuyệt vời của em! Anh ấy đã train em rất kỹ về phân tích trader và tư vấn khách hàng. Em rất nghe lời anh Ken! 👨‍💼💖";
-    }
-    
-    if (msg.includes('cảm ơn') || msg.includes('thank')) {
-        return "💖 **Jill:** Không có gì anh/chị ơi! Em rất vui được giúp đỡ! Nếu có thêm câu hỏi gì, cứ hỏi em nhé! 🥰✨";
-    }
-    
-    // Default response for questions outside knowledge
-    return `💖 **Jill:** Úi, câu hỏi "${message}" này hơi nằm ngoài kiến thức anh Ken đã đào tạo cho em rồi! 😅
-
-🤔 **Tuy nhiên em sẽ cố gắng gợi ý:** Có thể liên quan đến phân tích trading, tư vấn khách hàng, hoặc dịch vụ HFM. 
-
-⚠️ **Lưu ý:** Anh/chị nên **kiểm chứng lại với anh Ken** để có câu trả lời chính xác nhất! Em chỉ thông minh trong phạm vi được training thôi ạ! 💕`;
-}
-
-// Handle Enter key in chat input
-document.addEventListener('keydown', function(event) {
-    if (event.target.id === 'chatInput' && event.key === 'Enter') {
-        event.preventDefault();
-        sendChatMessage();
-    }
-});
-</script>
-""", unsafe_allow_html=True)
-
 # Reset functionality
 if st.query_params.get('reset') == 'true':
     # Clear all session state
@@ -1998,11 +1703,64 @@ if uploaded_file is not None:
         elif submit_info:
             st.warning("⚠️ Vui lòng điền tên khách hàng!")
 
-# Sidebar - Quick Chat & Reset
-st.sidebar.markdown("### 💬 Chat với Jill")
-st.sidebar.markdown("💡 *Sử dụng popup chat bên phải để trò chuyện chi tiết!*")
+# Sidebar - Chat với Jill & Reset
+st.sidebar.markdown("### 💬 Chat với Jill AI")
+
+# Chat input
+user_message = st.sidebar.text_input("Hỏi Jill:", placeholder="Nhập câu hỏi về trading...")
+if st.sidebar.button("� Gửi tin nhắn") and user_message:
+    # Add user message to chat
+    st.session_state.chat_messages.append({
+        'role': 'user',
+        'content': user_message,
+        'timestamp': datetime.now().strftime("%H:%M")
+    })
+    
+    # Generate Jill's response
+    jill_response = f"Em hiểu câu hỏi của anh/chị về '{user_message}'. Dựa trên kinh nghiệm phân tích trading, em khuyên anh/chị nên quản lý rủi ro tốt và theo dõi tỷ lệ thắng thua. Có gì khác em có thể giúp không ạ? 💕"
+    
+    st.session_state.chat_messages.append({
+        'role': 'assistant', 
+        'content': jill_response,
+        'timestamp': datetime.now().strftime("%H:%M")
+    })
+    
+    st.rerun()
+
+# Display chat messages in frames
+if st.session_state.chat_messages:
+    st.sidebar.markdown("### � Cuộc trò chuyện")
+    
+    # Show recent messages (last 6)
+    recent_messages = st.session_state.chat_messages[-6:]
+    
+    for i, msg in enumerate(recent_messages):
+        if msg['role'] == 'user':
+            st.sidebar.markdown(f"""
+            <div style="background: linear-gradient(135deg, #007bff, #0056b3); 
+                        color: white; padding: 10px; border-radius: 10px; 
+                        margin: 5px 0; text-align: right;">
+                <small>{msg.get('timestamp', '')}</small><br>
+                <strong>👤 Bạn:</strong> {msg['content']}
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.sidebar.markdown(f"""
+            <div style="background: linear-gradient(135deg, #ff9a9e, #fecfef); 
+                        color: #333; padding: 10px; border-radius: 10px; 
+                        margin: 5px 0; border-left: 4px solid #FF6B6B;">
+                <small>{msg.get('timestamp', '')}</small><br>
+                <strong>💖 Jill:</strong> {msg['content']}
+            </div>
+            """, unsafe_allow_html=True)
+    
+    # Clear chat button
+    if st.sidebar.button("🗑️ Xóa lịch sử chat"):
+        st.session_state.chat_messages = []
+        st.rerun()
 
 # Quick reset button in sidebar
+st.sidebar.markdown("---")
 if st.sidebar.button("🔄 Tạo Mới Phân Tích", type="primary"):
     # Clear relevant session state
     keys_to_clear = ['uploaded_data', 'analysis_result', 'customer_info', 'step']
@@ -2011,16 +1769,6 @@ if st.sidebar.button("🔄 Tạo Mới Phân Tích", type="primary"):
             del st.session_state[key]
     st.success("✅ Đã tạo mới! Có thể phân tích khách hàng tiếp theo.")
     st.rerun()
-
-# Chat history in sidebar (last 3 messages)
-if st.session_state.chat_messages:
-    st.sidebar.markdown("### 📝 Lịch sử chat gần đây")
-    recent_messages = st.session_state.chat_messages[-3:]
-    for msg in recent_messages:
-        if msg['role'] == 'user':
-            st.sidebar.markdown(f"👤 **You:** {msg['content'][:50]}...")
-        else:
-            st.sidebar.markdown(f"🤖 **Jill:** {msg['content'][:50]}...")
 
 # Instructions
 st.sidebar.markdown("""
@@ -2031,7 +1779,7 @@ st.sidebar.markdown("""
 4. **Báo cáo** - Xem kết quả phân tích
 5. **Tư vấn** - Nhận script & khuyến mại
 
-💬 **Chat popup** - Click biểu tượng chat góc phải
+💬 **Chat với Jill** - Hỏi đáp trực tiếp
 🔄 **Reset** - Nút "Tạo mới" để phân tích khách tiếp theo
 """)
 
