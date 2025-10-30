@@ -190,80 +190,83 @@ class JillAI:
         self.setup_ai_models()
     
     def setup_ai_models(self):
-        """Thiết lập các AI models cho Jill với debug info"""
+        """Thiết lập các AI models cho Jill với improved error handling"""
         
-        # Debug info
-        st.sidebar.info(f"🔍 Debug: HAS_GOOGLE = {HAS_GOOGLE}")
-        google_key = os.getenv("GOOGLE_API_KEY")
-        st.sidebar.info(f"🔍 Debug: API Key = {'EXISTS (' + str(len(google_key)) + ' chars)' if google_key else 'MISSING'}")
-        
-        # OpenAI GPT-4
+        # Initialize all clients as None
         self.openai_client = None
+        self.anthropic_client = None  
+        self.gemini_client = None
+        
+        # Google Gemini setup với priority cao nhất
+        try:
+            # Thử nhiều nguồn API key
+            google_key = None
+            
+            # 1. Hardcoded key từ user
+            google_key = "AIzaSyBQUuZ8V5VycCBfg0XJ-U9bFszqxi_xmFY"
+            
+            # 2. Environment variable backup
+            if not google_key:
+                google_key = os.getenv("GOOGLE_API_KEY")
+                
+            # 3. Streamlit secrets backup
+            if not google_key:
+                try:
+                    google_key = st.secrets.get("GOOGLE_API_KEY", "")
+                except:
+                    pass
+            
+            if google_key and HAS_GOOGLE:
+                genai.configure(api_key=google_key)
+                self.gemini_client = genai.GenerativeModel('gemini-pro')
+                st.sidebar.success("✅ Google Gemini AI ready!")
+            else:
+                st.sidebar.warning(f"⚠️ Google AI unavailable - Key: {bool(google_key)}, Package: {HAS_GOOGLE}")
+                
+        except Exception as e:
+            st.sidebar.error(f"❌ Google AI setup failed: {str(e)}")
+        
+        # OpenAI GPT-4 backup
         try:
             openai_key = os.getenv("OPENAI_API_KEY")
             if not openai_key:
                 try:
                     openai_key = st.secrets.get("OPENAI_API_KEY", "")
                 except:
-                    openai_key = ""
+                    pass
             
             if openai_key and HAS_OPENAI:
                 self.openai_client = openai.OpenAI(api_key=openai_key)
+                st.sidebar.success("✅ OpenAI GPT-4 ready!")
         except Exception as e:
-            st.sidebar.warning(f"⚠️ OpenAI setup failed: {str(e)}")
+            st.sidebar.warning(f"⚠️ OpenAI unavailable: {str(e)}")
         
-        # Anthropic Claude
-        self.anthropic_client = None
+        # Anthropic Claude backup
         try:
             anthropic_key = os.getenv("ANTHROPIC_API_KEY")
             if not anthropic_key:
                 try:
                     anthropic_key = st.secrets.get("ANTHROPIC_API_KEY", "")
                 except:
-                    anthropic_key = ""
+                    pass
             
             if anthropic_key and HAS_ANTHROPIC:
                 self.anthropic_client = anthropic.Anthropic(api_key=anthropic_key)
+                st.sidebar.success("✅ Anthropic Claude ready!")
         except Exception as e:
-            st.sidebar.warning(f"⚠️ Anthropic setup failed: {str(e)}")
+            st.sidebar.warning(f"⚠️ Anthropic unavailable: {str(e)}")
         
-        # Google Gemini
-        self.gemini_client = None
-        try:
-            # Try to get API key from multiple sources
-            google_key = os.getenv("GOOGLE_API_KEY")
-            if not google_key:
-                try:
-                    google_key = st.secrets.get("GOOGLE_API_KEY", "")
-                except:
-                    google_key = ""
-            
-            # Fallback to hardcoded key if needed (for debugging)
-            if not google_key:
-                google_key = "AIzaSyBQUuZ8V5VycCBfg0XJ-U9bFszqxi_xmFY"
-            
-            st.sidebar.info(f"🔍 Final check: Key={bool(google_key)}, HAS_GOOGLE={HAS_GOOGLE}")
-            
-            if google_key and HAS_GOOGLE:
-                genai.configure(api_key=google_key)
-                self.gemini_client = genai.GenerativeModel('gemini-pro')
-                st.sidebar.success("✅ Google Gemini configured successfully!")
-            else:
-                st.sidebar.error(f"❌ Google setup failed: Key={bool(google_key)}, Package={HAS_GOOGLE}")
-        except Exception as e:
-            st.sidebar.warning(f"⚠️ Google AI setup failed: {str(e)}")
-        
-        # Status display
+        # Status summary
         active_models = []
-        if self.openai_client: active_models.append("OpenAI GPT-4")
-        if self.anthropic_client: active_models.append("Anthropic Claude")
-        if self.gemini_client: active_models.append("Google Gemini")
+        if self.gemini_client: active_models.append("🔥 Google Gemini (Primary)")
+        if self.openai_client: active_models.append("🤖 OpenAI GPT-4")
+        if self.anthropic_client: active_models.append("🧠 Anthropic Claude")
         
         if active_models:
-            st.sidebar.success(f"🤖 AI Models: {', '.join(active_models)}")
+            st.sidebar.info("🎯 **AI Models Active:**\n" + "\n".join(active_models))
         else:
-            st.sidebar.error("❌ No AI models available. Using fallback mode.")
-            st.sidebar.info("💡 Configure API keys in .env file or Streamlit secrets")
+            st.sidebar.error("❌ **No AI models available!**\nUsing fallback analysis mode.")
+            st.sidebar.info("💡 **Need API keys for:**\n- Google AI (Gemini)\n- OpenAI (GPT-4)\n- Anthropic (Claude)")
     
     def _load_knowledge_base(self):
         """Tải kiến thức từ nghiên cứu và prompt"""
@@ -382,351 +385,306 @@ class JillAI:
         """
     
     def ai_analyze_trading_behavior(self, df_processed, customer_info):
-        """Bước 2: Phân tích hành vi giao dịch theo nghiên cứu chuyên sâu về trader CFD châu Á"""
+        """Bước 2: Phân tích hành vi giao dịch theo nghiên cứu chuyên sâu về trader CFD châu Á - IMPROVED"""
         
-        # === PHÂN TÍCH DỮ LIỆU THEO NGHIÊN CỨU ===
-        
-        # 1. Phân tích quy mô vốn và tài chính (theo nghiên cứu)
-        capital = customer_info.get('capital', 0)
-        if capital < 5000:
-            capital_group = "Nhóm vốn nhỏ (< $5k)"
-            capital_behavior = "Xu hướng chấp nhận rủi ro cao, ít đa dạng hóa, dễ 'all-in'"
-        elif capital <= 100000:
-            capital_group = "Nhóm vốn trung bình ($5k-$100k)"
-            capital_behavior = "Cân bằng giữa rủi ro và bảo toàn, đa dạng hóa vừa phải"
-        else:
-            capital_group = "Nhóm vốn lớn (> $100k)"
-            capital_behavior = "Bảo toàn tài sản, đa dạng hóa mạnh, ít thiên lệch tâm lý"
-        
-        # 2. Phân tích phong cách giao dịch (theo thời gian nắm giữ)
-        avg_holding_hours = df_processed['Holding_Time_Hours'].median()
-        scalp_ratio = (df_processed['Holding_Time_Hours'] < 1).mean() * 100
-        
-        if avg_holding_hours < 1:
-            trading_style = "Scalping (lướt sóng siêu ngắn)"
-            style_behavior = "Giao dịch cực nhanh, tìm chênh lệch nhỏ nhiều lần, áp lực tâm lý cao"
-        elif avg_holding_hours < 24:
-            trading_style = "Day Trading (giao dịch trong ngày)"
-            style_behavior = "Không giữ lệnh qua đêm, theo dõi thị trường liên tục"
-        elif avg_holding_hours < 168:  # 1 tuần
-            trading_style = "Swing Trading (lướt sóng trung hạn)"
-            style_behavior = "Tận dụng các đợt sóng giá trung hạn, kiên nhẫn hơn"
-        else:
-            trading_style = "Position Trading (đầu tư dài hạn)"
-            style_behavior = "Giữ vị thế lâu, quan tâm xu hướng lớn, ít stress"
-        
-        # 3. Phân tích tâm lý và kỷ luật (theo pattern thắng/thua)
-        total_trades = len(df_processed)
-        win_rate = (df_processed['Result'] == 'WIN').mean() * 100
-        profit_factor = self._calculate_profit_factor(df_processed)
-        net_pnl = df_processed['Net_PnL'].sum()
-        
-        # Phân tích consistency và rủi ro
-        if win_rate < 40 and profit_factor < 1.0:
-            psychology_assessment = "Thiếu kỷ luật, dễ bị cảm xúc chi phối, cần cải thiện urgent"
-            risk_level = "RỦI RO CAO"
-        elif win_rate >= 40 and profit_factor >= 1.0:
-            psychology_assessment = "Có kỷ luật cơ bản, quản lý rủi ro tương đối ổn"
-            risk_level = "RỦI RO TRUNG BÌNH"
-        else:
-            psychology_assessment = "Cần cải thiện kỷ luật và phương pháp"
-            risk_level = "RỦI RO TRUNG BÌNH"
-        
-        # 4. Phân tích sản phẩm ưa thích
-        asset_distribution = df_processed['Asset_Class'].value_counts().to_dict()
-        dominant_asset = max(asset_distribution, key=asset_distribution.get)
-        asset_concentration = (asset_distribution[dominant_asset] / total_trades) * 100
-        
-        # 5. Phân loại trader theo nghiên cứu (5 nhóm chính)
-        trader_classification = self._classify_trader_advanced(
-            capital, customer_info.get('experience_years', 0), customer_info.get('age', 30),
-            win_rate, profit_factor, scalp_ratio, asset_concentration,
-            total_trades, trading_style
-        )
-        
-        # === PROMPT CHO AI PHÂN TÍCH CHUYÊN SÂU ===
-        ai_prompt = f"""
-        Em là Jill - AI Agent dễ thương của anh Ken. Em cần phân tích hành vi giao dịch CFD theo nghiên cứu chuyên sâu về trader châu Á:
+        try:
+            # === PHÂN TÍCH DỮ LIỆU THEO NGHIÊN CỨU ===
+            
+            # 1. Phân tích quy mô vốn và tài chính
+            capital = customer_info.get('capital', 0)
+            if capital < 5000:
+                capital_group = "Nhóm vốn nhỏ (< $5k)"
+                capital_behavior = "Xu hướng chấp nhận rủi ro cao, ít đa dạng hóa, dễ 'all-in'"
+            elif capital <= 100000:
+                capital_group = "Nhóm vốn trung bình ($5k-$100k)"
+                capital_behavior = "Cân bằng giữa rủi ro và bảo toàn, đa dạng hóa vừa phải"
+            else:
+                capital_group = "Nhóm vốn lớn (> $100k)"
+                capital_behavior = "Bảo toàn tài sản, đa dạng hóa mạnh, ít thiên lệch tâm lý"
+            
+            # 2. Phân tích phong cách giao dịch
+            avg_holding_hours = df_processed['Holding_Time_Hours'].median()
+            scalp_ratio = (df_processed['Holding_Time_Hours'] < 1).mean() * 100
+            
+            if avg_holding_hours < 1:
+                trading_style = "Scalping (lướt sóng siêu ngắn)"
+                style_behavior = "Giao dịch cực nhanh, tìm chênh lệch nhỏ nhiều lần, áp lực tâm lý cao"
+            elif avg_holding_hours < 24:
+                trading_style = "Day Trading (giao dịch trong ngày)"
+                style_behavior = "Không giữ lệnh qua đêm, theo dõi thị trường liên tục"
+            elif avg_holding_hours < 168:  # 1 tuần
+                trading_style = "Swing Trading (lướt sóng trung hạn)"
+                style_behavior = "Tận dụng các đợt sóng giá trung hạn, kiên nhẫn hơn"
+            else:
+                trading_style = "Position Trading (đầu tư dài hạn)"
+                style_behavior = "Giữ vị thế lâu, quan tâm xu hướng lớn, ít stress"
+            
+            # 3. Tính toán metrics quan trọng
+            total_trades = len(df_processed)
+            win_rate = (df_processed['Result'] == 'WIN').mean() * 100
+            profit_factor = self._calculate_profit_factor(df_processed)
+            net_pnl = df_processed['Net_PnL'].sum()
+            
+            # 4. Phân tích sản phẩm ưa thích
+            asset_distribution = df_processed['Asset_Class'].value_counts()
+            if len(asset_distribution) > 0:
+                dominant_asset = asset_distribution.index[0]
+                asset_concentration = (asset_distribution.iloc[0] / total_trades) * 100
+            else:
+                dominant_asset = "Không xác định"
+                asset_concentration = 0
+            
+            # 5. Phân loại trader theo nghiên cứu (5 nhóm chính)
+            trader_classification = self._classify_trader_comprehensive(
+                capital, customer_info.get('experience_years', 0), customer_info.get('age', 30),
+                win_rate, profit_factor, scalp_ratio, asset_concentration,
+                total_trades, trading_style, df_processed
+            )
+            
+            # 6. AI Analysis nâng cao
+            ai_prompt = f"""
+Em là Jill - AI Agent chuyên phân tích hành vi trader CFD. Dựa trên nghiên cứu về 5 nhóm trader châu Á, hãy phân tích:
 
-        === DỮ LIỆU PHÂN TÍCH ===
-        🏛️ **NHÓM VỐN:** {capital_group}
-        📊 **PHONG CÁCH:** {trading_style} 
-        🧠 **TÂM LÝ:** {psychology_assessment}
-        ⚠️ **RỦI RO:** {risk_level}
-        🎯 **SẢN PHẨM CHỦ ĐẠO:** {dominant_asset} ({asset_concentration:.1f}%)
+🏛️ **VỐN:** {capital_group} (${capital:,})
+📊 **STYLE:** {trading_style} (TB: {avg_holding_hours:.1f}h)
+📈 **METRICS:** Win: {win_rate:.1f}%, PF: {profit_factor:.2f}, PnL: ${net_pnl:,.0f}
+🎯 **ASSETS:** {dominant_asset} ({asset_concentration:.1f}%)
+👤 **PROFILE:** Tuổi {customer_info.get('age', 30)}, KN {customer_info.get('experience_years', 0)} năm
 
-        === METRICS CHI TIẾT ===
-        • Tổng lệnh: {total_trades}
-        • Tỷ lệ thắng: {win_rate:.1f}%
-        • Profit Factor: {profit_factor:.2f}
-        • Net PnL: ${net_pnl:,.2f}
-        • Thời gian nắm giữ TB: {avg_holding_hours:.1f} giờ
-        • Tỷ lệ Scalping: {scalp_ratio:.1f}%
-        • Độ tập trung tài sản: {asset_concentration:.1f}%
+**CLASSIFICATION:** {trader_classification}
 
-        === THÔNG TIN KHÁCH HÀNG ===
-        • Vốn: ${capital:,}
-        • Kinh nghiệm: {customer_info.get('experience_years', 0)} năm
-        • Tuổi: {customer_info.get('age', 30)}
-
-        === PHÂN LOẠI TRADER ===
-        {trader_classification}
-
-        **YÊU CẦU PHÂN TÍCH:**
-
-        Dựa trên nghiên cứu về 5 nhóm trader CFD tiêu biểu ở châu Á, hãy phân tích chuyên sâu:
-
-        1. **XÁC NHẬN PHÂN LOẠI** - Khách hàng thuộc nhóm nào trong 5 nhóm?
-        2. **ĐẶC ĐIỂM TÂM LÝ** - Phân tích tính cách, động cơ, thiên lệch hành vi
-        3. **ĐIỂM MẠNH & ĐIỂM YẾU** - Dựa trên dữ liệu thực tế
-        4. **RỦI RO TIỀM ẨN** - Những nguy cơ cần chú ý
-        5. **KHUYẾN NGHỊ CỤ THỂ** - Chiến lược cải thiện phù hợp
-
-        Trả lời bằng JSON format:
-        {{
-            "trader_type": "tên nhóm chính xác",
-            "confidence": "90%",
-            "psychological_profile": "phân tích tâm lý chi tiết",
-            "strengths": ["điểm mạnh 1", "điểm mạnh 2"],
-            "weaknesses": ["điểm yếu 1", "điểm yếu 2"],
-            "risk_factors": ["rủi ro 1", "rủi ro 2"],
-            "specific_recommendations": ["khuyến nghị 1", "khuyến nghị 2", "khuyến nghị 3"],
-            "scientific_reasoning": "lý do khoa học dựa trên nghiên cứu"
-        }}
-        """
-        
-        # Gọi AI để phân tích chuyên sâu
-        ai_response = self._call_ai_model(ai_prompt)
-        
-        if ai_response:
-            try:
-                ai_analysis = json.loads(ai_response)
-                # Bổ sung thêm dữ liệu từ phân tích cơ bản
-                ai_analysis.update({
-                    "capital_group": capital_group,
-                    "trading_style": trading_style,
-                    "win_rate": win_rate,
-                    "profit_factor": profit_factor,
-                    "risk_level": risk_level,
-                    "dominant_asset": dominant_asset,
-                    "asset_concentration": asset_concentration
-                })
-                return ai_analysis
-            except Exception as e:
-                # Fallback với phân tích cơ bản
-                return self._fallback_analysis_advanced(capital_group, trading_style, win_rate, profit_factor, trader_classification)
-        else:
-            # Fallback nếu không có AI
-            return self._fallback_analysis_advanced(capital_group, trading_style, win_rate, profit_factor, trader_classification)
+Hãy trả lời JSON:
+{{
+    "trader_type": "1 trong 5 nhóm chính xác",
+    "confidence": "90%",
+    "psychological_profile": "phân tích tâm lý chi tiết",
+    "key_insights": ["insight 1", "insight 2", "insight 3"],
+    "risk_assessment": "MỨC ĐỘ RỦI RO + lý do",
+    "improvement_suggestions": ["gợi ý 1", "gợi ý 2"],
+    "consultation_approach": "cách tiếp cận tư vấn phù hợp"
+}}
+"""
+            
+            # Gọi AI để phân tích
+            ai_response = self._call_ai_model(ai_prompt)
+            
+            if ai_response:
+                try:
+                    # Thử parse JSON
+                    ai_analysis = json.loads(ai_response.strip())
+                    
+                    # Bổ sung thêm dữ liệu từ phân tích cơ bản
+                    ai_analysis.update({
+                        "capital_group": capital_group,
+                        "trading_style": trading_style,
+                        "style_behavior": style_behavior,
+                        "win_rate": win_rate,
+                        "profit_factor": profit_factor,
+                        "net_pnl": net_pnl,
+                        "total_trades": total_trades,
+                        "scalp_ratio": scalp_ratio,
+                        "dominant_asset": dominant_asset,
+                        "asset_concentration": asset_concentration,
+                        "avg_holding_hours": avg_holding_hours
+                    })
+                    return ai_analysis
+                    
+                except json.JSONDecodeError:
+                    # Nếu không parse được JSON, dùng text analysis
+                    return self._parse_ai_text_response(ai_response, capital_group, trading_style, 
+                                                      win_rate, profit_factor, trader_classification)
+            else:
+                # Fallback analysis
+                return self._fallback_analysis_comprehensive(capital_group, trading_style, win_rate, 
+                                                           profit_factor, trader_classification, df_processed)
+                
+        except Exception as e:
+            st.error(f"Lỗi trong phân tích AI: {str(e)}")
+            return self._fallback_analysis_comprehensive(capital_group, trading_style, win_rate, 
+                                                       profit_factor, trader_classification, df_processed)
     
     def _call_ai_model(self, prompt):
-        """Gọi AI model để phân tích"""
+        """Gọi AI model để phân tích - Improved with better error handling"""
         
-        # Thử OpenAI GPT-4 trước
+        # Thử Google Gemini trước (ưu tiên)
+        if self.gemini_client:
+            try:
+                response = self.gemini_client.generate_content(prompt)
+                if response and response.text:
+                    return response.text
+            except Exception as e:
+                st.warning(f"⚠️ Google Gemini error: {str(e)}")
+        
+        # Thử OpenAI GPT-4
         if self.openai_client:
             try:
                 response = self.openai_client.chat.completions.create(
                     model="gpt-4",
                     messages=[
-                        {"role": "system", "content": "You are Jill, a cute and smart AI trading analyst. Always respond in Vietnamese and in JSON format."},
+                        {"role": "system", "content": "You are Jill, a cute and smart AI trading analyst. Always respond in Vietnamese and in proper format."},
                         {"role": "user", "content": prompt}
                     ],
                     temperature=0.3,
-                    max_tokens=1500
+                    max_tokens=2000
                 )
-                return response.choices[0].message.content
-            except:
-                pass
+                if response and response.choices:
+                    return response.choices[0].message.content
+            except Exception as e:
+                st.warning(f"⚠️ OpenAI error: {str(e)}")
         
         # Thử Anthropic Claude
         if self.anthropic_client:
             try:
                 response = self.anthropic_client.messages.create(
                     model="claude-3-sonnet-20240229",
-                    max_tokens=1500,
+                    max_tokens=2000,
                     messages=[
                         {"role": "user", "content": prompt}
                     ]
                 )
-                return response.content[0].text
-            except:
-                pass
+                if response and response.content:
+                    return response.content[0].text
+            except Exception as e:
+                st.warning(f"⚠️ Anthropic error: {str(e)}")
         
-        # Thử Google Gemini
-        if self.gemini_client:
-            try:
-                response = self.gemini_client.generate_content(prompt)
-                return response.text
-            except:
-                pass
-        
+        # Nếu tất cả đều fail
+        st.info("💡 AI models không khả dụng, sử dụng fallback analysis")
         return None
     
-    def _classify_trader_advanced(self, capital, experience_years, age, win_rate, profit_factor, scalp_ratio, asset_concentration, total_trades, trading_style):
-        """Phân loại trader theo nghiên cứu chuyên sâu về 5 nhóm tiêu biểu"""
+    def _classify_trader_comprehensive(self, capital, experience_years, age, win_rate, profit_factor, 
+                                     scalp_ratio, asset_concentration, total_trades, trading_style, df_processed):
+        """Phân loại trader theo nghiên cứu chuyên sâu về 5 nhóm tiêu biểu - ENHANCED VERSION"""
         
-        # 1. NEWBIE GAMBLER - Trader mới, vốn nhỏ, đa mạo hiểm
-        if (capital < 5000 and experience_years < 2 and 
-            win_rate < 40 and scalp_ratio > 60 and profit_factor < 0.8):
-            return """
-            🎯 **NHÓM 1: NEWBIE GAMBLER** (Trader mới, vốn nhỏ, đa mạo hiểm)
-            
-            **Đặc điểm chính:**
-            - Mới tham gia thị trường, vốn ít, kỳ vọng lợi nhuận cao nhanh
-            - Thiên về scalping/day trading với hy vọng "đánh nhanh thắng nhanh"
-            - Dễ bị chi phối bởi cảm xúc và thiên lệch tự tin thái quá
-            - Giao dịch như đánh bạc, theo tin đồn, thiếu phương pháp
-            
-            **Thách thức:**
-            - Nguy cơ thua lỗ nhanh và lớn do thiếu kinh nghiệm
-            - Dễ mắc các sai lầm cơ bản: không đặt SL, giữ lệnh lỗ quá lâu
-            - Tâm lý tham lam và sợ hãi thay đổi liên tục
-            
-            **Cần hỗ trợ:**
-            - Giáo dục cơ bản về quản lý rủi ro
-            - Kiểm soát cảm xúc và xây dựng kỷ luật
-            - Hướng dẫn từng bước một cách kiên nhẫn
-            """
+        scores = {
+            "Newbie Gambler": 0,
+            "Technical Trader": 0, 
+            "Long-term Investor": 0,
+            "Part-time Trader": 0,
+            "Asset Specialist": 0
+        }
         
-        # 2. TECHNICAL TRADER - Lướt sóng kỹ thuật kỷ luật
-        elif (experience_years >= 1 and win_rate >= 45 and profit_factor >= 1.0 and
-              20 <= scalp_ratio <= 60 and trading_style in ["Day Trading", "Swing Trading"]):
-            return """
-            🎯 **NHÓM 2: TECHNICAL TRADER** (Lướt sóng kỹ thuật kỷ luật)
-            
-            **Đặc điểm chính:**
-            - Đã có kinh nghiệm, vững vàng phân tích kỹ thuật
-            - Có hệ thống giao dịch và tuân thủ kỷ luật tương đối tốt
-            - Chú trọng hiệu suất và cải thiện liên tục
-            - Giao dịch chuyên nghiệp hoặc bán chuyên nghiệp
-            
-            **Thách thức:**
-            - Áp lực tâm lý từ việc giao dịch thường xuyên
-            - Cần cập nhật thông tin và phân tích liên tục
-            - Nguy cơ quá tự tin sau chuỗi thắng dài
-            
-            **Cần hỗ trợ:**
-            - Phân tích kỹ thuật chất lượng cao
-            - Thông tin thị trường nhanh và chính xác
-            - Công cụ giao dịch nâng cao
-            """
+        # === NEWBIE GAMBLER SCORING ===
+        if capital < 5000: scores["Newbie Gambler"] += 20
+        if experience_years < 1: scores["Newbie Gambler"] += 25
+        if win_rate < 40: scores["Newbie Gambler"] += 20
+        if scalp_ratio > 60: scores["Newbie Gambler"] += 25
+        if profit_factor < 0.8: scores["Newbie Gambler"] += 15
+        if total_trades > 100 and (df_processed['Holding_Time_Hours'] < 2).mean() > 0.7: scores["Newbie Gambler"] += 10
         
-        # 3. LONG-TERM INVESTOR - Nhà đầu tư dài hạn thận trọng
-        elif (capital > 50000 and win_rate > 50 and profit_factor > 1.2 and
-              scalp_ratio < 30 and trading_style in ["Swing Trading", "Position Trading"]):
-            return """
-            🎯 **NHÓM 3: LONG-TERM INVESTOR** (Nhà đầu tư dài hạn thận trọng)
-            
-            **Đặc điểm chính:**
-            - Vốn lớn, kiên nhẫn, tập trung bảo toàn và tăng trưởng ổn định
-            - Ít bị dao động bởi biến động ngắn hạn
-            - Quan tâm đến yếu tố cơ bản và xu hướng vĩ mô
-            - Đa dạng hóa danh mục tốt
-            
-            **Thách thức:**
-            - Phí qua đêm khi nắm giữ lâu dài
-            - Rủi ro thị trường chung sụp đổ
-            - Lựa chọn tài sản và timing không phù hợp
-            
-            **Cần hỗ trợ:**
-            - Tư vấn chiến lược tổng thể và phân bổ tài sản
-            - Phân tích vĩ mô kinh tế chuyên sâu
-            - Islamic account để tránh phí swap
-            """
+        # === TECHNICAL TRADER SCORING ===
+        if 5000 <= capital <= 100000: scores["Technical Trader"] += 15
+        if 1 <= experience_years <= 3: scores["Technical Trader"] += 20
+        if 45 <= win_rate <= 60: scores["Technical Trader"] += 25
+        if 1.0 <= profit_factor <= 2.0: scores["Technical Trader"] += 20
+        if 20 <= scalp_ratio <= 60: scores["Technical Trader"] += 15
+        if trading_style in ["Day Trading", "Swing Trading"]: scores["Technical Trader"] += 20
         
-        # 4. PART-TIME TRADER - Bán thời gian thực dụng
-        elif (experience_years >= 1 and total_trades < 50 and win_rate >= 45 and
-              scalp_ratio < 40 and 5000 <= capital <= 100000):
-            return """
-            🎯 **NHÓM 4: PART-TIME TRADER** (Bán thời gian thực dụng)
-            
-            **Đặc điểm chính:**
-            - Có công việc chính, giao dịch để kiếm thêm thu nhập
-            - Thời gian hạn chế nhưng có phương pháp
-            - Mục tiêu thu nhập phụ ổn định, không quá tham lam
-            - Thực dụng và linh hoạt
-            
-            **Thách thức:**
-            - Không thể theo dõi thị trường liên tục
-            - Dễ bỏ lỡ cơ hội do bận công việc chính
-            - Quản lý rủi ro khi không canh thị trường
-            
-            **Cần hỗ trợ:**
-            - Giải pháp tiện lợi và tự động hóa
-            - Cảnh báo qua SMS/app khi có cơ hội
-            - Copy trading hoặc tín hiệu đơn giản
-            """
+        # === LONG-TERM INVESTOR SCORING ===
+        if capital > 50000: scores["Long-term Investor"] += 25
+        if win_rate > 55: scores["Long-term Investor"] += 20
+        if profit_factor > 1.3: scores["Long-term Investor"] += 25
+        if scalp_ratio < 20: scores["Long-term Investor"] += 15
+        if trading_style in ["Swing Trading", "Position Trading"]: scores["Long-term Investor"] += 20
+        if age >= 35: scores["Long-term Investor"] += 10
         
-        # 5. SPECIALIST TRADER - Chuyên tập trung một loại tài sản
-        elif asset_concentration > 70:
-            return """
-            🎯 **NHÓM 5: SPECIALIST TRADER** (Chuyên tập trung một loại tài sản)
-            
-            **Đặc điểm chính:**
-            - Hiểu sâu và tập trung vào một thị trường cụ thể
-            - Có thể là Forex specialist, Gold trader, Crypto expert...
-            - Am hiểu đặc thù và biến động của tài sản yêu thích
-            - Thường có network và nguồn tin chuyên biệt
-            
-            **Thách thức:**
-            - Thiếu đa dạng hóa, rủi ro tập trung cao
-            - Dễ bị ảnh hưởng khi thị trường chuyên môn gặp khó
-            - Quá tự tin vào sự am hiểu của mình
-            
-            **Cần hỗ trợ:**
-            - Thông tin chuyên sâu về thị trường yêu thích
-            - Kết nối với cộng đồng trader cùng chuyên môn
-            - Khuyến nghị đa dạng hóa một cách khéo léo
-            """
+        # === PART-TIME TRADER SCORING ===
+        if total_trades < 50: scores["Part-time Trader"] += 20
+        if scalp_ratio < 30: scores["Part-time Trader"] += 15
+        if 45 <= win_rate <= 60: scores["Part-time Trader"] += 15
+        if 1.0 <= profit_factor <= 1.5: scores["Part-time Trader"] += 15
+        if trading_style == "Swing Trading": scores["Part-time Trader"] += 25
         
-        # Default - có thể là mix hoặc chưa rõ pattern
-        else:
-            return """
-            🎯 **NHÓM MIX/CHƯA XÁC ĐỊNH** (Cần quan sát thêm)
-            
-            **Đặc điểm:**
-            - Chưa có pattern rõ ràng hoặc kết hợp nhiều đặc điểm
-            - Có thể đang trong giai đoạn chuyển đổi phong cách
-            - Cần thu thập thêm dữ liệu để phân loại chính xác
-            
-            **Khuyến nghị:**
-            - Theo dõi và đánh giá định kỳ
-            - Tư vấn linh hoạt dựa trên xu hướng gần nhất
-            - Hỗ trợ tìm ra phong cách phù hợp
-            """
+        # === ASSET SPECIALIST SCORING ===
+        if asset_concentration > 70: scores["Asset Specialist"] += 30
+        if asset_concentration > 80: scores["Asset Specialist"] += 20  # Bonus for high concentration
+        asset_count = df_processed['Asset_Class'].nunique()
+        if asset_count <= 2: scores["Asset Specialist"] += 25
+        if experience_years >= 2: scores["Asset Specialist"] += 15
+        
+        # Xác định nhóm với điểm cao nhất
+        primary_type = max(scores, key=scores.get)
+        max_score = scores[primary_type]
+        
+        # Nếu điểm quá thấp, default về Newbie Gambler
+        if max_score < 30:
+            primary_type = "Newbie Gambler"
+        
+        confidence = min(max_score, 95)  # Cap at 95%
+        
+        return f"""
+🎯 **PHÂN LOẠI: {primary_type}** (Độ tin cậy: {confidence}%)
+
+**📊 Scoring Details:**
+• Newbie Gambler: {scores["Newbie Gambler"]}
+• Technical Trader: {scores["Technical Trader"]}
+• Long-term Investor: {scores["Long-term Investor"]}
+• Part-time Trader: {scores["Part-time Trader"]}
+• Asset Specialist: {scores["Asset Specialist"]}
+
+**🔍 Key Factors:**
+• Vốn: ${capital:,} | Kinh nghiệm: {experience_years} năm
+• Performance: Win {win_rate:.1f}% | PF {profit_factor:.2f}
+• Style: {scalp_ratio:.1f}% scalping | {trading_style}
+• Assets: {asset_concentration:.1f}% tập trung | {asset_count} loại
+"""
     
-    def _fallback_analysis_advanced(self, capital_group, trading_style, win_rate, profit_factor, trader_classification):
-        """Phân tích fallback nâng cao khi không có AI"""
-        
-        # Đánh giá cơ bản
-        if win_rate < 40 and profit_factor < 0.8:
-            risk_assessment = "RỦI RO CAO - Cần can thiệp ngay"
-            psychological_profile = "Thiếu kỷ luật, dễ bị cảm xúc chi phối"
-        elif win_rate >= 45 and profit_factor >= 1.0:
-            risk_assessment = "RỦI RO TRUNG BÌNH - Ổn định"
-            psychological_profile = "Có kỷ luật cơ bản, quản lý được cảm xúc"
-        else:
-            risk_assessment = "RỦI RO TRUNG BÌNH - Cần cải thiện"
-            psychological_profile = "Cần hoàn thiện phương pháp và kỷ luật"
-        
+    def _parse_ai_text_response(self, ai_response, capital_group, trading_style, win_rate, profit_factor, trader_classification):
+        """Parse AI response khi không phải JSON"""
         return {
-            "trader_type": "Chưa xác định chính xác (cần AI analysis)",
-            "confidence": "70%",
-            "psychological_profile": psychological_profile,
-            "strengths": ["Đã có dữ liệu giao dịch để phân tích", "Sẵn sàng cải thiện"],
-            "weaknesses": ["Cần phân tích sâu hơn với AI", "Chưa đủ insight chi tiết"],
-            "risk_factors": [risk_assessment, "Thiếu phân tích chuyên sâu"],
-            "specific_recommendations": [
-                "Sử dụng AI analysis để hiểu rõ hơn",
-                "Tuân thủ quản lý rủi ro cơ bản",
-                "Ghi nhận thêm dữ liệu giao dịch"
-            ],
-            "scientific_reasoning": "Phân tích dựa trên dữ liệu cơ bản, cần AI để có insight sâu hơn",
+            "trader_type": "AI Analysis (Text)",
+            "confidence": "75%", 
+            "psychological_profile": ai_response[:200] + "..." if len(ai_response) > 200 else ai_response,
+            "key_insights": ["AI phân tích chi tiết", "Xem phần psychological_profile", "Cần review manual"],
+            "risk_assessment": f"Dựa trên win rate {win_rate:.1f}% và PF {profit_factor:.2f}",
+            "improvement_suggestions": ["Theo dõi kết quả AI analysis", "Cải thiện dần dần"],
+            "consultation_approach": "Kết hợp AI insights với manual review",
             "capital_group": capital_group,
             "trading_style": trading_style,
             "win_rate": win_rate,
             "profit_factor": profit_factor,
-            "risk_level": risk_assessment
+            "full_ai_response": ai_response
+        }
+        
+    def _fallback_analysis_comprehensive(self, capital_group, trading_style, win_rate, profit_factor, trader_classification, df_processed):
+        """Phân tích fallback nâng cao khi không có AI"""
+        
+        # Đánh giá risk dựa trên metrics
+        if win_rate < 40 and profit_factor < 1.0:
+            risk_assessment = "RỦI RO CAO - Cần can thiệp ngay"
+            psychological_profile = "Thiếu kỷ luật, giao dịch tùy hứng, dễ bị cảm xúc chi phối"
+        elif win_rate >= 50 and profit_factor >= 1.2:
+            risk_assessment = "RỦI RO THẤP - Trader có kinh nghiệm"  
+            psychological_profile = "Có kỷ luật tốt, phương pháp rõ ràng, quản lý cảm xúc ổn định"
+        else:
+            risk_assessment = "RỦI RO TRUNG BÌNH - Cần cải thiện"
+            psychological_profile = "Có cơ sở nhưng cần hoàn thiện kỷ luật và phương pháp"
+        
+        # Insights dựa trên dữ liệu
+        insights = []
+        if df_processed['Holding_Time_Hours'].mean() < 2:
+            insights.append("Thích giao dịch ngắn hạn - cần chú ý quản lý stress")
+        if df_processed['Asset_Class'].nunique() == 1:
+            insights.append("Tập trung vào một loại tài sản - expert nhưng thiếu đa dạng")
+        if len(df_processed) > 200:
+            insights.append("Tần suất giao dịch cao - cần kiểm soát over-trading")
+            
+        return {
+            "trader_type": "Phân tích cơ bản (không có AI)",
+            "confidence": "70%",
+            "psychological_profile": psychological_profile,
+            "key_insights": insights or ["Cần thêm dữ liệu để phân tích chi tiết"],
+            "risk_assessment": risk_assessment,
+            "improvement_suggestions": [
+                "Tuân thủ quản lý rủi ro cơ bản",
+                "Ghi nhận thêm dữ liệu giao dịch",
+                "Sử dụng AI analysis để có insight sâu hơn"
+            ],
+            "consultation_approach": "Tư vấn dựa trên metrics cơ bản, khuyến khích sử dụng AI",
+            "capital_group": capital_group,
+            "trading_style": trading_style,
+            "win_rate": win_rate,
+            "profit_factor": profit_factor,
+            "classification_detail": trader_classification
         }
     
     def _classify_trader(self, customer_info, win_rate, profit_factor, scalp_ratio, asset_dist, df, net_pnl, total_lots):
@@ -799,58 +757,262 @@ class JillAI:
             return "RỦI RO THẤP"
     
     def ai_generate_consultation_script(self, ai_analysis, customer_info, trading_metrics):
-        """Sử dụng AI để tạo script tư vấn thông minh"""
+        """Sử dụng AI để tạo script tư vấn thông minh - ENHANCED VERSION"""
         
-        prompt = f"""
-        Tôi là Jill - AI Agent dễ thương của Ken. Em cần tạo script tư vấn cho khách hàng dựa trên phân tích:
+        try:
+            # Chuẩn bị context chi tiết
+            trader_type = ai_analysis.get('trader_type', 'unknown')
+            context = {
+                'customer': {
+                    'name': customer_info.get('name', 'Anh/chị'),
+                    'age': customer_info.get('age', 30),
+                    'capital': customer_info.get('capital', 0),
+                    'experience': customer_info.get('experience_years', 0),
+                    'goals': customer_info.get('goals', [])
+                },
+                'analysis': ai_analysis,
+                'metrics': trading_metrics,
+                'knowledge_base': self.knowledge_base.get('trader_types', {}).get(trader_type, {})
+            }
+            
+            # Tạo prompt chi tiết cho Google Gemini
+            prompt = f"""
+Em là Jill - chuyên gia tư vấn tài chính AI dễ thương và chuyên nghiệp tại HFM. Em cần tạo script tư vấn cá nhân hóa cho khách hàng dựa trên phân tích chuyên sâu.
 
-        PHÂN TÍCH AI:
-        - Loại trader: {ai_analysis.get('trader_type', 'unknown')}
-        - Tâm lý: {ai_analysis.get('psychological_profile', '')}
-        - Đánh giá rủi ro: {ai_analysis.get('risk_assessment', '')}
-        - Insights: {ai_analysis.get('key_insights', [])}
+🎯 **THÔNG TIN KHÁCH HÀNG:**
+• Tên: {context['customer']['name']}
+• Tuổi: {context['customer']['age']} tuổi
+• Vốn giao dịch: ${context['customer']['capital']:,}
+• Kinh nghiệm: {context['customer']['experience']} năm
+• Mục tiêu: {', '.join(context['customer']['goals'])}
 
-        THÔNG TIN KHÁCH HÀNG:
-        - Tên: {customer_info.get('name', 'Anh/chị')}
-        - Tuổi: {customer_info.get('age', 'N/A')}
-        - Vốn: ${customer_info.get('capital', 0):,}
-        - Kinh nghiệm: {customer_info.get('experience_years', 0)} năm
+📊 **KẾT QUẢ PHÂN TÍCH:**
+• Loại trader: {trader_type}
+• Tâm lý: {ai_analysis.get('psychological_profile', 'Đang phân tích')}
+• Win rate: {trading_metrics.get('win_rate', 0):.1f}%
+• Profit Factor: {trading_metrics.get('profit_factor', 0):.2f}
+• Net PnL: ${trading_metrics.get('net_pnl', 0):,.2f}
+• Đánh giá rủi ro: {ai_analysis.get('risk_assessment', 'Trung bình')}
 
-        METRICS GIAO DỊCH:
-        - Tỷ lệ thắng: {trading_metrics.get('win_rate', 0)}%
-        - Profit Factor: {trading_metrics.get('profit_factor', 0)}
-        - Net PnL: ${trading_metrics.get('net_pnl', 0):,.2f}
+💡 **INSIGHTS CHÍNH:**
+{chr(10).join(['• ' + insight for insight in ai_analysis.get('key_insights', [])])}
 
-        Hãy tạo script tư vấn cá nhân hóa với:
-        1. Lời chào phù hợp với tâm lý khách hàng
-        2. Phân tích điểm mạnh/yếu dựa trên dữ liệu
-        3. Gợi ý cải thiện cụ thể
-        4. Chương trình khuyến mại HFM phù hợp
-        5. Lý do khoa học cho từng khuyến nghị
+🎯 **GỢI Ý CẢI THIỆN:**
+{chr(10).join(['• ' + suggestion for suggestion in ai_analysis.get('improvement_suggestions', [])])}
 
-        Viết bằng tiếng Việt, giọng điệu chuyên nghiệp nhưng thân thiện.
+**YÊU CẦU TẠO SCRIPT:**
 
-        Trả lời trong format:
-        {{
-            "greeting": "lời chào",
-            "analysis": "phân tích điểm mạnh/yếu",
-            "recommendations": ["gợi ý 1", "gợi ý 2", "gợi ý 3"],
-            "promotions": ["khuyến mại 1", "khuyến mại 2"],
-            "closing": "lời kết"
-        }}
-        """
+Hãy tạo script tư vấn bằng tiếng Việt với cấu trúc:
+
+1. **Lời chào thân thiện** - Giới thiệu Jill từ HFM, tạo rapport
+2. **Tóm tắt phân tích** - Khen ngợi điểm tích cực trước khi đưa ra nhận xét
+3. **Phân tích chuyên môn** - Giải thích loại trader và đặc điểm
+4. **Khuyến nghị cụ thể** - 3-4 gợi ý thiết thực và actionable
+5. **Quản lý rủi ro** - Nhấn mạnh risk management phù hợp
+6. **Hỗ trợ tiếp theo** - Mời hợp tác và cam kết hỗ trợ
+
+**STYLE GUIDE:**
+✅ Tone: Chuyên nghiệp nhưng thân thiện, như chị em thân thiết
+✅ Dài: 400-600 từ
+✅ Dùng emoji phù hợp nhưng không quá nhiều
+✅ Tránh thuật ngữ quá khô khan
+✅ Tập trung vào lợi ích của khách hàng
+✅ Thể hiện sự hiểu biết sâu sắc về trading
+
+Trả lời CHÍNH XÁC theo format JSON:
+{{
+    "script": "nội dung script đầy đủ",
+    "key_messages": ["thông điệp chính 1", "thông điệp chính 2", "thông điệp chính 3"],
+    "tone": "friendly_professional",
+    "next_steps": ["bước tiếp theo 1", "bước tiếp theo 2"]
+}}
+"""
+            
+            # Gọi AI để tạo script
+            ai_response = self._call_ai_model(prompt)
+            
+            if ai_response:
+                try:
+                    # Parse JSON response
+                    script_data = json.loads(ai_response.strip())
+                    
+                    # Bổ sung thông tin khuyến mại
+                    promotions = self._suggest_promotions_intelligent(trader_type, ai_analysis, customer_info)
+                    
+                    return {
+                        "script": script_data.get("script", ""),
+                        "key_messages": script_data.get("key_messages", []),
+                        "tone": script_data.get("tone", "professional"),
+                        "next_steps": script_data.get("next_steps", []),
+                        "recommended_promotions": promotions,
+                        "generated_by": "Google Gemini AI",
+                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    }
+                    
+                except json.JSONDecodeError:
+                    # Nếu không parse được JSON, dùng text response
+                    return self._create_script_from_text(ai_response, trader_type, customer_info, ai_analysis)
+                    
+            else:
+                # Fallback khi AI không khả dụng
+                return self._fallback_consultation_script_enhanced(ai_analysis, customer_info, trading_metrics)
+                
+        except Exception as e:
+            st.error(f"Lỗi tạo script AI: {str(e)}")
+            return self._fallback_consultation_script_enhanced(ai_analysis, customer_info, trading_metrics)
+    
+    def _suggest_promotions_intelligent(self, trader_type, ai_analysis, customer_info):
+        """Gợi ý khuyến mại thông minh dựa trên phân tích AI"""
         
-        ai_response = self._call_ai_model(prompt)
+        promotions = []
+        capital = customer_info.get('capital', 0)
+        experience = customer_info.get('experience_years', 0)
+        risk_level = ai_analysis.get('risk_assessment', '')
         
-        if ai_response:
-            try:
-                script_data = json.loads(ai_response)
-                return self._format_consultation_script(script_data)
-            except:
-                pass
+        # Logic intelligent cho từng trader type
+        if trader_type == "Newbie Gambler":
+            promotions = [
+                {
+                    "name": "🎓 Khóa học Trading Cơ Bản MIỄN PHÍ",
+                    "description": "Series 10 bài học từ cơ bản đến nâng cao, đặc biệt cho trader mới",
+                    "reason": "Xây dựng nền tảng kiến thức vững chắc trước khi giao dịch thực",
+                    "priority": "HIGH"
+                },
+                {
+                    "name": "🛡️ Demo Account VIP",
+                    "description": "$50,000 ảo + mentor 1-1 trong 30 ngày đầu",
+                    "reason": "Thực hành an toàn và có hướng dẫn từ chuyên gia",
+                    "priority": "HIGH"
+                },
+                {
+                    "name": "⚠️ Risk Control Package",
+                    "description": "Công cụ tự động giới hạn đòn bẩy và stop loss bắt buộc",
+                    "reason": "Bảo vệ tài khoản khỏi những sai lầm nghiêm trọng của trader mới",
+                    "priority": "CRITICAL"
+                }
+            ]
+            
+        elif trader_type == "Technical Trader":
+            promotions = [
+                {
+                    "name": "📊 VIP Research Package",
+                    "description": "Phân tích kỹ thuật chuyên sâu hàng ngày + tín hiệu real-time",
+                    "reason": "Hỗ trợ quyết định giao dịch với thông tin chất lượng cao",
+                    "priority": "HIGH"
+                },
+                {
+                    "name": "💰 Spread Discount 50%",
+                    "description": "Giảm 50% spread cho 3 tháng đầu",
+                    "reason": "Tối ưu chi phí giao dịch cho trader tần suất cao",
+                    "priority": "MEDIUM"
+                },
+                {
+                    "name": "🔧 API Trading Premium",
+                    "description": "Truy cập API chuyên nghiệp + EA hosting miễn phí",
+                    "reason": "Hỗ trợ tự động hóa và backtesting chiến lược",
+                    "priority": "MEDIUM"
+                }
+            ]
+            
+        elif trader_type == "Long-term Investor":
+            promotions = [
+                {
+                    "name": "🕌 Islamic Account Premium",
+                    "description": "Không swap + spread ưu đãi cho hold dài hạn",
+                    "reason": "Phù hợp cho việc nắm giữ position lâu mà không tốn phí swap",
+                    "priority": "HIGH"
+                },
+                {
+                    "name": "💼 Portfolio Management Service",
+                    "description": "Tư vấn phân bổ tài sản + báo cáo định kỳ",
+                    "reason": "Hỗ trợ đa dạng hóa và quản lý danh mục chuyên nghiệp",
+                    "priority": "HIGH"
+                },
+                {
+                    "name": "🌍 Macro Analysis Subscription",
+                    "description": "Báo cáo kinh tế vĩ mô và xu hướng dài hạn",
+                    "reason": "Cung cấp insight cho quyết định đầu tư dài hạn",
+                    "priority": "MEDIUM"
+                }
+            ]
+            
+        elif trader_type == "Part-time Trader":
+            promotions = [
+                {
+                    "name": "🤖 Copy Trading Premium",
+                    "description": "Copy từ top traders + notifications thông minh",
+                    "reason": "Tiết kiệm thời gian mà vẫn có cơ hội sinh lời",
+                    "priority": "HIGH"
+                },
+                {
+                    "name": "📱 Mobile App VIP",
+                    "description": "Alerts, one-click trading, và portfolio tracking",
+                    "reason": "Giao dịch hiệu quả ngay cả khi đang bận",
+                    "priority": "MEDIUM"
+                },
+                {
+                    "name": "📧 Weekly Market Digest",
+                    "description": "Tóm tắt thị trường + cơ hội giao dịch cuối tuần",
+                    "reason": "Cập nhật thông tin đầy đủ mà không mất thời gian",
+                    "priority": "MEDIUM"
+                }
+            ]
+            
+        elif trader_type == "Asset Specialist":
+            promotions = [
+                {
+                    "name": "💎 Specialized Trading Conditions",
+                    "description": "Spread siêu thấp cho asset yêu thích + execution ưu tiên",
+                    "reason": "Tối ưu chi phí cho chuyên gia về một loại tài sản",
+                    "priority": "HIGH"
+                },
+                {
+                    "name": "🎯 Expert Community Access",
+                    "description": "Kết nối với cộng đồng chuyên gia cùng chuyên môn",
+                    "reason": "Chia sẻ kinh nghiệm và học hỏi từ những expert khác",
+                    "priority": "MEDIUM"
+                },
+                {
+                    "name": "📊 Deep Market Data",
+                    "description": "Level 2 data + institutional flows cho asset chuyên môn",
+                    "reason": "Thông tin độc quyền để trading hiệu quả hơn",
+                    "priority": "HIGH"
+                }
+            ]
         
-        # Fallback script
-        return self._fallback_consultation_script(ai_analysis, customer_info)
+        # Default promotions
+        if not promotions:
+            promotions = [
+                {
+                    "name": "🎁 Welcome Package",
+                    "description": "Bonus + giảm spread + education materials",
+                    "reason": "Package toàn diện cho mọi loại trader",
+                    "priority": "MEDIUM"
+                }
+            ]
+        
+        return promotions[:3]  # Tối đa 3 promotions
+    
+    def _create_script_from_text(self, ai_response, trader_type, customer_info, ai_analysis):
+        """Tạo script từ AI text response khi không parse được JSON"""
+        
+        return {
+            "script": ai_response,
+            "key_messages": [
+                f"Khách hàng thuộc nhóm {trader_type}",
+                "Cần cải thiện quản lý rủi ro",
+                "HFM hỗ trợ đồng hành phát triển"
+            ],
+            "tone": "professional_ai",
+            "next_steps": [
+                "Thảo luận chi tiết về phân tích",
+                "Lựa chọn gói dịch vụ phù hợp",
+                "Thiết lập kế hoạch cải thiện"
+            ],
+            "recommended_promotions": self._suggest_promotions_intelligent(trader_type, ai_analysis, customer_info),
+            "generated_by": "AI Text Analysis",
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
     
     def _get_communication_script(self, trader_type, analysis_result, customer_info):
         """Tạo script giao tiếp cụ thể"""
@@ -1007,27 +1169,103 @@ Em sẽ cung cấp hỗ trợ chuyên sâu:
         
         return script
     
-    def _fallback_consultation_script(self, ai_analysis, customer_info):
-        """Script fallback khi AI không hoạt động"""
-        trader_type = ai_analysis.get('trader_type', 'newbie_gambler')
+    def _fallback_consultation_script_enhanced(self, ai_analysis, customer_info, trading_metrics):
+        """Enhanced fallback script khi AI không khả dụng"""
         
-        if trader_type in self.knowledge_base['trader_types']:
-            trader_info = self.knowledge_base['trader_types'][trader_type]
-            return f"""
-            ### 💝 Script Tư Vấn Từ Jill (Backup Mode)
-            
-            **🎯 Phân Loại:** {trader_info['name']}
-            
-            **📋 Đặc Điểm:**
-            {chr(10).join([f"• {char}" for char in trader_info['characteristics']])}
-            
-            **💡 Tư Vấn:**
-            {trader_info['advice']}
-            
-            ⚠️ *Chế độ backup - Khuyến nghị kích hoạt AI models để có trải nghiệm tốt hơn*
-            """
+        trader_type = ai_analysis.get('trader_type', 'Mixed Type')
+        customer_name = customer_info.get('name', 'Anh/chị')
+        capital = customer_info.get('capital', 0)
+        win_rate = trading_metrics.get('win_rate', 0)
+        profit_factor = trading_metrics.get('profit_factor', 0)
+        net_pnl = trading_metrics.get('net_pnl', 0)
         
-        return "Cần kích hoạt AI models để tạo script tư vấn chính xác."
+        # Đánh giá tổng thể
+        if win_rate >= 50 and profit_factor >= 1.2:
+            overall_assessment = "khá tốt"
+            performance_tone = "ấn tượng với"
+        elif win_rate >= 40 and profit_factor >= 1.0:
+            overall_assessment = "ổn định"
+            performance_tone = "đánh giá cao"
+        else:
+            overall_assessment = "cần cải thiện"
+            performance_tone = "nhận thấy tiềm năng phát triển của"
+        
+        script = f"""
+### � Script Tư Vấn Cá Nhân Hóa
+
+**🤝 Lời Chào:**
+Xin chào {customer_name}! Tôi là Jill từ đội ngũ tư vấn HFM. Rất vui được hỗ trợ anh/chị hôm nay.
+
+**📊 Tóm Tắt Phân Tích:**
+Sau khi phân tích chi tiết lịch sử giao dịch của anh/chị, tôi {performance_tone} phong cách trading {overall_assessment} của anh/chị. Với {trading_metrics.get('total_trades', 0)} giao dịch và tỷ lệ thắng {win_rate:.1f}%, anh/chị thể hiện một trader có {trader_type.lower()}.
+
+**💡 Phân Tích Chuyên Môn:**
+• **Hiệu suất:** Win rate {win_rate:.1f}% và Profit Factor {profit_factor:.2f} cho thấy {ai_analysis.get('psychological_profile', 'anh/chị có phương pháp giao dịch riêng')}
+• **Phong cách:** {ai_analysis.get('trading_style', 'Đa dạng')} phù hợp với mức vốn ${capital:,}
+• **Điểm mạnh:** {', '.join(ai_analysis.get('key_insights', ['Có kinh nghiệm thực tế', 'Dữ liệu giao dịch phong phú'])[:2])}
+
+**🎯 Khuyến Nghị Cải Thiện:**
+"""
+        
+        # Recommendations dựa trên performance
+        if win_rate < 45:
+            script += """
+• 🎯 **Cải thiện tỷ lệ thắng:** Tập trung vào chất lượng setup thay vì số lượng
+• 📚 **Nâng cao kiến thức:** Tham gia khóa học phân tích kỹ thuật nâng cao
+• 🛡️ **Quản lý rủi ro:** Đặt stop loss nghiêm ngặt và tuân thủ risk:reward 1:2"""
+        else:
+            script += """
+• 📈 **Tối ưu hiệu suất:** Phân tích và nhân rộng các setup thành công
+• 💰 **Tăng quy mô:** Cân nhắc tăng position size với quản lý rủi ro chặt chẽ
+• 🔧 **Sử dụng công cụ:** Áp dụng các tool phân tích nâng cao"""
+        
+        script += f"""
+
+**⚠️ Quản Lý Rủi ro Quan Trọng:**
+Với mức vốn ${capital:,}, tôi khuyên anh/chị:
+• Không rủi ro quá 2% tài khoản cho mỗi lệnh
+• Đa dạng hóa danh mục qua nhiều asset class
+• Thường xuyên review và điều chỉnh chiến lược
+
+**🎁 Gói Hỗ Trợ Phù Hợp:**
+"""
+        
+        # Promotions dựa trên trader type
+        promotions = self._suggest_promotions_intelligent(trader_type, ai_analysis, customer_info)
+        for promo in promotions:
+            script += f"\n• **{promo['name']}:** {promo['description']}\n  *{promo['reason']}*"
+        
+        script += f"""
+
+**✨ Cam Kết Hỗ Trợ:**
+HFM cam kết đồng hành cùng anh/chị trên con đường phát triển trading. Với kinh nghiệm {customer_info.get('experience_years', 0)} năm và phong cách {trader_type.lower()}, tôi tin rằng anh/chị sẽ đạt được mục tiêu đầu tư.
+
+Hãy liên hệ để được tư vấn chi tiết và thiết lập gói dịch vụ phù hợp nhất!
+
+**📞 Liên hệ:** Jill - HFM Senior Trading Advisor
+**📧 Email:** jill@hfm.com | **🔗 Website:** hfm.com
+
+---
+*💖 Script được tạo bởi Jill AI với sự quan tâm chân thành*
+"""
+        
+        return {
+            "script": script,
+            "key_messages": [
+                f"Khách hàng có phong cách {trader_type}",
+                f"Performance {overall_assessment} với win rate {win_rate:.1f}%", 
+                "HFM hỗ trợ đồng hành phát triển"
+            ],
+            "tone": "professional_caring",
+            "next_steps": [
+                "Thảo luận chi tiết về phân tích",
+                "Lựa chọn gói dịch vụ phù hợp",
+                "Thiết lập kế hoạch trading"
+            ],
+            "recommended_promotions": promotions,
+            "generated_by": "Jill Fallback Analysis",
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
 
     def ai_chat_response(self, user_question, context=""):
         """Chat thông minh với Jill sử dụng AI - trả lời linh hoạt và dễ thương"""
@@ -1427,85 +1665,287 @@ uploaded_file = st.file_uploader(
 )
 
 def load_and_process_csv(file):
-    """Xử lý file CSV theo đúng specification từ Prompt app.txt"""
+    """Xử lý file CSV thông minh - tự động detect format và standardize"""
     try:
-        # Đọc CSV
-        df = pd.read_csv(file)
+        # Đọc CSV với encoding auto-detect
+        df = pd.read_csv(file, encoding='utf-8-sig')
         
-        # Làm sạch dữ liệu - loại bỏ Balance transactions
-        df = df.dropna(subset=['TICKET', 'SYMBOL', 'ACTION'])
-        df = df[df['ACTION'].isin(['Buy', 'Sell'])]
+        # Kiểm tra và standardize column names
+        df = standardize_column_names(df)
         
-        # Chuyển đổi thời gian
-        df['OPEN TIME'] = pd.to_datetime(df['OPEN TIME'], errors='coerce')
-        df['CLOSE TIME'] = pd.to_datetime(df['CLOSE TIME'], errors='coerce')
+        # Kiểm tra các cột cần thiết
+        required_cols = ['TICKET', 'SYMBOL', 'ACTION', 'LOTS', 'OPEN_TIME', 'CLOSE_TIME', 'PROFIT']
+        missing_cols = [col for col in required_cols if col not in df.columns]
         
-        # Loại bỏ các giao dịch không có thời gian hợp lệ
-        df = df.dropna(subset=['OPEN TIME', 'CLOSE TIME'])
+        if missing_cols:
+            st.error(f"❌ Thiếu các cột bắt buộc: {missing_cols}")
+            st.info("📋 Cột cần có: TICKET, SYMBOL, ACTION (Buy/Sell), LOTS, OPEN_TIME, CLOSE_TIME, PROFIT")
+            return None
+        
+        # Làm sạch dữ liệu - loại bỏ Balance transactions và invalid rows
+        df = clean_trading_data(df)
+        
+        if len(df) == 0:
+            st.error("❌ Không có dữ liệu giao dịch hợp lệ sau khi làm sạch!")
+            return None
         
         # Feature Engineering theo đúng spec
         df = add_engineered_features(df)
         
+        st.success(f"✅ Đã xử lý thành công {len(df)} giao dịch hợp lệ!")
         return df
         
     except Exception as e:
         st.error(f"❌ Lỗi khi xử lý dữ liệu: {str(e)}")
+        st.info("💡 Kiểm tra format CSV: UTF-8, có header, các cột cần thiết đầy đủ")
         return None
 
-def add_engineered_features(df):
-    """Thêm các feature được tính toán theo Prompt app.txt"""
+def standardize_column_names(df):
+    """Chuẩn hóa tên cột để tương thích với nhiều format"""
+    # Mapping cho các format khác nhau
+    column_mapping = {
+        # Standard format
+        'Ticket': 'TICKET',
+        'ticket': 'TICKET',
+        'TICKET': 'TICKET',
+        
+        # Symbol/Item
+        'Symbol': 'SYMBOL', 
+        'SYMBOL': 'SYMBOL',
+        'Item': 'SYMBOL',
+        'item': 'SYMBOL',
+        
+        # Action/Type
+        'Type': 'ACTION',
+        'type': 'ACTION', 
+        'Action': 'ACTION',
+        'ACTION': 'ACTION',
+        
+        # Lots/Volume
+        'Lots': 'LOTS',
+        'lots': 'LOTS',
+        'LOTS': 'LOTS',
+        'Volume': 'LOTS',
+        'volume': 'LOTS',
+        
+        # Time columns
+        'Open Time': 'OPEN_TIME',
+        'OPEN TIME': 'OPEN_TIME',
+        'open time': 'OPEN_TIME',
+        'open_time': 'OPEN_TIME',
+        
+        'Close Time': 'CLOSE_TIME', 
+        'CLOSE TIME': 'CLOSE_TIME',
+        'close time': 'CLOSE_TIME',
+        'close_time': 'CLOSE_TIME',
+        
+        # Price columns
+        'Price': 'OPEN_PRICE',
+        'price': 'OPEN_PRICE',
+        'Open Price': 'OPEN_PRICE',
+        'OPEN PRICE': 'OPEN_PRICE',
+        'open_price': 'OPEN_PRICE',
+        
+        'Close Price': 'CLOSE_PRICE',
+        'CLOSE PRICE': 'CLOSE_PRICE', 
+        'close_price': 'CLOSE_PRICE',
+        
+        # Financial columns
+        'Profit': 'PROFIT',
+        'profit': 'PROFIT',
+        'PROFIT': 'PROFIT',
+        
+        'Commission': 'COMM',
+        'COMM': 'COMM',
+        'commission': 'COMM',
+        
+        'Swap': 'SWAP',
+        'SWAP': 'SWAP',
+        'swap': 'SWAP',
+        
+        'Taxes': 'TAXES',
+        'TAXES': 'TAXES',
+        'taxes': 'TAXES'
+    }
     
-    # Net PnL = PROFIT + COMM + SWAP
-    df['Net_PnL'] = df['PROFIT'] + df['COMM'] + df['SWAP']
+    # Apply mapping
+    df = df.rename(columns=column_mapping)
     
-    # Holding time = CLOSE TIME - OPEN TIME
-    df['Holding_Time'] = df['CLOSE TIME'] - df['OPEN TIME']
-    df['Holding_Time_Hours'] = df['Holding_Time'].dt.total_seconds() / 3600
-    
-    # Direction mapping
-    df['Direction'] = df['ACTION'].map({'Buy': 1, 'Sell': -1})
-    
-    # Points change = Direction * (CLOSE PRICE - OPEN PRICE)
-    df['Points_Change'] = df['Direction'] * (df['CLOSE PRICE'] - df['OPEN PRICE'])
-    
-    # Asset class classification
-    df['Asset_Class'] = df['SYMBOL'].apply(classify_asset)
-    
-    # Trading session (UTC+7)
-    df['Session'] = df['OPEN TIME'].apply(get_trading_session)
-    
-    # Result classification
-    df['Result'] = df['Net_PnL'].apply(lambda x: 'WIN' if x > 0 else ('LOSS' if x < 0 else 'BE'))
-    
-    # Trading style based on holding time
-    df['Trading_Style'] = df['Holding_Time_Hours'].apply(classify_trading_style)
-    
-    # Day of week
-    df['Day_of_Week'] = df['OPEN TIME'].dt.day_name()
-    
+    # Ensure we have required columns with defaults
+    if 'COMM' not in df.columns:
+        df['COMM'] = 0.0
+    if 'SWAP' not in df.columns:
+        df['SWAP'] = 0.0
+    if 'TAXES' not in df.columns:
+        df['TAXES'] = 0.0
+        
     return df
 
-def classify_asset(symbol):
-    """Phân loại asset class theo Prompt app.txt"""
-    symbol = str(symbol).upper()
+def clean_trading_data(df):
+    """Làm sạch dữ liệu giao dịch"""
+    # Loại bỏ empty rows
+    df = df.dropna(subset=['TICKET', 'SYMBOL'])
     
-    # Forex pairs - kiểm tra có phải cặp tiền tệ không
-    forex_currencies = ['USD', 'EUR', 'JPY', 'GBP', 'AUD', 'NZD', 'CHF', 'CAD', 'CNH', 'SGD']
-    if len(symbol) >= 6 and any(curr in symbol for curr in forex_currencies):
-        # Kiểm tra xem có phải là cặp 2 loại tiền không
-        for curr1 in forex_currencies:
-            for curr2 in forex_currencies:
-                if curr1 != curr2 and curr1 in symbol and curr2 in symbol:
+    # Loại bỏ Balance transactions (không phải giao dịch thực)
+    balance_keywords = ['balance', 'deposit', 'withdrawal', 'transfer', 'bonus', 'int. trans']
+    df = df[~df['SYMBOL'].fillna('').str.lower().str.contains('|'.join(balance_keywords), na=False)]
+    df = df[~df.get('COMMENT', '').fillna('').str.lower().str.contains('|'.join(balance_keywords), na=False)]
+    
+    # Chỉ giữ các giao dịch Buy/Sell
+    valid_actions = ['Buy', 'Sell', 'buy', 'sell', 'BUY', 'SELL']
+    df = df[df['ACTION'].isin(valid_actions)]
+    
+    # Chuẩn hóa ACTION
+    df['ACTION'] = df['ACTION'].str.title()  # Buy, Sell
+    
+    # Chuyển đổi thời gian
+    df['OPEN_TIME'] = pd.to_datetime(df['OPEN_TIME'], errors='coerce')
+    df['CLOSE_TIME'] = pd.to_datetime(df['CLOSE_TIME'], errors='coerce')
+    
+    # Loại bỏ các giao dịch không có thời gian hợp lệ
+    df = df.dropna(subset=['OPEN_TIME', 'CLOSE_TIME'])
+    
+    # Chuyển đổi numeric columns
+    numeric_columns = ['LOTS', 'PROFIT', 'COMM', 'SWAP']
+    for col in numeric_columns:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+    
+    # Loại bỏ rows với LOTS = 0 hoặc NaN
+    df = df[df['LOTS'] > 0]
+    
+    return df.reset_index(drop=True)
+
+def add_engineered_features(df):
+    """Thêm các feature được tính toán theo Prompt app.txt - IMPROVED VERSION"""
+    
+    try:
+        # 1. Net PnL = PROFIT + COMM + SWAP + TAXES
+        df['COMM'] = df.get('COMM', 0).fillna(0)
+        df['SWAP'] = df.get('SWAP', 0).fillna(0) 
+        df['TAXES'] = df.get('TAXES', 0).fillna(0)
+        df['Net_PnL'] = df['PROFIT'] + df['COMM'] + df['SWAP'] + df['TAXES']
+        
+        # 2. Holding time = CLOSE_TIME - OPEN_TIME
+        df['Holding_Time'] = df['CLOSE_TIME'] - df['OPEN_TIME']
+        df['Holding_Time_Hours'] = df['Holding_Time'].dt.total_seconds() / 3600
+        
+        # 3. Direction mapping
+        df['Direction'] = df['ACTION'].map({'Buy': 1, 'Sell': -1})
+        
+        # 4. Points change calculation (if prices available)
+        if 'OPEN_PRICE' in df.columns and 'CLOSE_PRICE' in df.columns:
+            df['OPEN_PRICE'] = pd.to_numeric(df['OPEN_PRICE'], errors='coerce')
+            df['CLOSE_PRICE'] = pd.to_numeric(df['CLOSE_PRICE'], errors='coerce')
+            df['Points_Change'] = df['Direction'] * (df['CLOSE_PRICE'] - df['OPEN_PRICE'])
+        else:
+            df['Points_Change'] = 0  # Default if prices not available
+        
+        # 5. Asset class classification
+        df['Asset_Class'] = df['SYMBOL'].apply(classify_asset)
+        
+        # 6. Trading session (UTC+7)
+        df['Session'] = df['OPEN_TIME'].apply(get_trading_session)
+        
+        # 7. Result classification
+        df['Result'] = df['Net_PnL'].apply(lambda x: 'WIN' if x > 0 else ('LOSS' if x < 0 else 'BE'))
+        
+        # 8. Trading style based on holding time
+        df['Trading_Style'] = df['Holding_Time_Hours'].apply(classify_trading_style)
+        
+        # 9. Day of week
+        df['Day_of_Week'] = df['OPEN_TIME'].dt.day_name()
+        
+        # 10. Hour of day (for session analysis)
+        df['Hour_of_Day'] = df['OPEN_TIME'].dt.hour
+        
+        # 11. Risk metrics
+        df['Risk_Reward'] = df.apply(calculate_risk_reward, axis=1)
+        
+        return df
+        
+    except Exception as e:
+        st.error(f"❌ Lỗi trong feature engineering: {str(e)}")
+        return df
+
+def calculate_risk_reward(row):
+    """Tính tỷ lệ Risk/Reward nếu có SL và TP"""
+    try:
+        sl = row.get('S/L', 0) or row.get('S / L', 0) or 0
+        tp = row.get('T/P', 0) or row.get('T / P', 0) or 0
+        open_price = row.get('OPEN_PRICE', 0) or 0
+        
+        if sl > 0 and tp > 0 and open_price > 0:
+            direction = row.get('Direction', 1)
+            if direction == 1:  # Buy
+                risk = abs(open_price - sl)
+                reward = abs(tp - open_price)
+            else:  # Sell
+                risk = abs(sl - open_price)
+                reward = abs(open_price - tp)
+            
+            if risk > 0:
+                return reward / risk
+        return 0
+    except:
+        return 0
+
+def classify_asset(symbol):
+    """Phân loại asset class theo Prompt app.txt - IMPROVED VERSION"""
+    if pd.isna(symbol):
+        return 'Khác'
+        
+    symbol = str(symbol).upper().strip()
+    
+    # 1. Forex pairs - kiểm tra pattern 6-8 ký tự với 2 currencies
+    forex_currencies = ['USD', 'EUR', 'JPY', 'GBP', 'AUD', 'NZD', 'CHF', 'CAD', 'CNH', 'SGD', 'HKD', 'NOK', 'SEK', 'PLN', 'CZK']
+    
+    # Loại bỏ suffix như 'r', 'm', etc.
+    clean_symbol = symbol.rstrip('RM').rstrip('R').rstrip('M')
+    
+    if len(clean_symbol) >= 6:
+        # Kiểm tra xem có phải cặp tiền không (EURUSD, GBPJPY, etc.)
+        for i, curr1 in enumerate(forex_currencies):
+            if clean_symbol.startswith(curr1):
+                remaining = clean_symbol[len(curr1):]
+                if remaining in forex_currencies:
                     return 'Forex'
     
-    # Kim loại
-    if any(metal in symbol for metal in ['XAU', 'XAG', 'GOLD', 'SILVER']):
-        return 'Kim loại' 
+    # 2. Kim loại quý
+    precious_metals = ['XAU', 'XAG', 'GOLD', 'SILVER', 'PLATINUM', 'PALLADIUM']
+    if any(metal in symbol for metal in precious_metals):
+        return 'Kim loại'
     
-    # Crypto
-    crypto_symbols = ['BTC', 'ETH', 'SOL', 'ADA', 'DOT']
-    if any(crypto in symbol for crypto in crypto_symbols) or symbol.endswith('USDT') or symbol.endswith('USD'):
-        return 'Crypto'
+    # 3. Crypto - detect crypto patterns
+    crypto_patterns = [
+        'BTC', 'ETH', 'LTC', 'XRP', 'ADA', 'DOT', 'SOL', 'AVAX', 'MATIC', 'DOGE',
+        'SHIB', 'UNI', 'LINK', 'ATOM', 'FTT', 'NEAR', 'ALGO', 'ICP', 'HBAR'
+    ]
+    
+    # Check if symbol contains crypto + USD/USDT pattern
+    for crypto in crypto_patterns:
+        if symbol.startswith(crypto) and ('USD' in symbol or 'USDT' in symbol):
+            return 'Crypto'
+    
+    # 4. Indices
+    indices_patterns = [
+        'US30', 'US500', 'NAS100', 'UK100', 'GER30', 'FRA40', 'ESP35', 'ITA40',
+        'JPN225', 'AUS200', 'HKG33', 'USDX', 'DXY', 'SPX', 'NDX', 'DAX', 'FTSE'
+    ]
+    if any(idx in symbol for idx in indices_patterns):
+        return 'Chỉ số'
+    
+    # 5. Commodities  
+    commodities = [
+        'OIL', 'CRUDE', 'BRENT', 'WTI', 'NGAS', 'GAS', 'WHEAT', 'CORN', 'SOYBEAN',
+        'COFFEE', 'SUGAR', 'COTTON', 'COPPER', 'ZINC'
+    ]
+    if any(commodity in symbol for commodity in commodities):
+        return 'Hàng hóa'
+    
+    # 6. Individual stocks (thường có pattern khác)
+    if len(symbol) <= 5 and symbol.isalpha():
+        return 'Cổ phiếu'
     
     return 'Khác'
 

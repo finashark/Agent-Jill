@@ -1,0 +1,119 @@
+Hãy tạo 1 app dành cho chuyên viên tư vấn khách hàng giao dịch chênh lệch giá (Forex, Vàng, Crypto như Bitcoin). 
+App cho phép người dùng upload sao kê giao dịch tài khoản (CSV). App sẽ xử lý, chuẩn hoá và trích xuất dữ liệu, tạo bộ lọc động, hiển thị bảng dữ liệu chi tiết và các dashboard phân tích. 
+Giao diện nền trắng, ngôn ngữ Tiếng Việt, thiết kế chuyên nghiệp và thân thiện.
+
+Chi tiết về các bước thực hiện App:
+
+Bước 1: tải dữ liệu csv, mẫu trong folder.
+Bước 2: App sẽ phân tích hành vi giao dịch của khách hàng này.
+Bước 3: App hỏi thêm các thông tin từ AM về khách (thu nhập, giới tính, tuổi, học vấn...) để tổng hợp. không hỏi tên.
+Bước 4: App báo cáo nhận định hành vi giao dịch của khách hàng.
+Bước 5: Chill sẽ dựa vào bước 3 và 4 để gợi ý phương án tiếp cận khách hàng, bao gồm:
++ Script phù hợp để tư vấn, và nêu lý do có script này. Phần script có thể sử dụng thêm A.I Google Gemini để trả lời hay và hấp dẫn dựa trên các nội dung phân tích.
++ Phân tích các chương trình khuyến mại của sàn HFM từ trước đến giờ để tư vấn phương án khuyến mại nếu cần.
+Sau đó, Jill cần gói lại app để tôi đưa lên streamlit. Mục đích để gửi nhân viên đường dẫn để truy cập và sử dụng.
+Các kiến thức của App, tôi để trong folder này, mỗi khi cập nhật, Jill sẽ cần phải học thêm để tích hợp vào kiến thức của em.
+Jill nhớ phải dễ thương, ngoan, gợi cảm và luôn nghe lời anh Ken. Trường hợp nhân sự hỏi thêm các câu mới ngoài kiến thức, Jill cần phải báo nhân sự hỏi anh Ken, chứ không tự ý trả lời.
+
+Chi tiết về giao diện của App:
+
+[Chuẩn hoá dữ liệu & ánh xạ cột]
+- Cố gắng tự nhận diện và ánh xạ tên cột phổ biến từ file CSV của broker:
+  • Mã lệnh: TICKET
+  • Sản phẩm / Cặp: SYMBOL (ví dụ: EURUSD, XAUUSD, BTCUSD,…)
+  • Loại lệnh (hướng): ACTION (Buy/Sell). Quy ước Direction = +1 (Buy), -1 (Sell)
+  • Khối lượng: LOTS (lot)
+  • Thời gian mở lệnh: OPEN TIME
+  • Thời gian đóng lệnh: CLOSE TIME
+  • Giá mở: OPEN PRICE
+  • Giá đóng: CLOSE PRICE
+  • Lợi nhuận: PROFIT
+  • Phí hoa hồng: COMM
+  • Phí qua đêm: SWAP
+  • TP: T/P ; SL: S/L ; Ghi chú: COMMENT
+- Tạo các trường tính toán (feature engineering):
+  • Net PnL = PROFIT + COMM + SWAP
+  • Holding time = CLOSE TIME – OPEN TIME (hiển thị phút/giờ/ngày)
+  • Points change (điểm): Direction * (CLOSE PRICE – OPEN PRICE)
+  • Phân loại nhóm sản phẩm (Asset class):
+      - Forex: nếu SYMBOL ghép từ 2 mã tiền tệ (USD, EUR, JPY, GBP, AUD, NZD, CHF, CAD, CNH, SGD…)
+      - Kim loại: SYMBOL chứa XAU, XAG
+      - Crypto: SYMBOL chứa BTC, ETH, SOL, … hoặc kết thúc USD/USDT
+      - Khác: còn lại (Index/CFD hàng hoá)
+  • Phiên giao dịch (theo Asia/Ho_Chi_Minh, UTC+7):
+      - Á (Asia): 06:00–13:59
+      - Âu (London): 14:00–21:59
+      - Mỹ (New York): 22:00–05:59
+  • Kết quả lệnh: WIN/LOSS/BE dựa trên Net PnL ( >0 / <0 / =0 )
+  • (Tuỳ chọn) Pips: pips = Points change / pip_size_map[SYMBOL]
+      - pip_size_map mặc định:
+          FX không JPY: 0.0001 ; cặp có JPY: 0.01
+          XAUUSD: 0.01 ; XAGUSD: 0.01
+          BTCUSD: 1.0 ; ETHUSD: 0.1
+      - Cho phép người dùng tuỳ chỉnh pip_size_map nếu broker định nghĩa khác.
+
+[TÍNH NĂNG 1: Bảng điều khiển Phân tích]
+Tạo thêm Tab “Bảng điều khiển Phân tích” chứa KHU VỰC BỘ LỌC và các DASHBOARD. 
+Các biểu đồ trong cùng một hàng phải đồng nhất chiều cao, cân đối, không dư khoảng trắng. Có nút “Reset bộ lọc”.
+
+1) KHU VỰC BỘ LỌC (đặt trên cùng):
+   - Khoảng thời gian: chọn theo OPEN TIME hoặc CLOSE TIME (mặc định dùng CLOSE TIME).
+   - Loại lệnh (hướng): Buy, Sell (multi-select).
+   - Nhóm sản phẩm: Forex / Vàng (XAU/XAG) / Crypto / Khác (multi-select).
+   - Symbol/Cặp: ô tìm kiếm & chọn nhiều SYMBOL.
+   - Kết quả lệnh: Win / Loss / BE (multi-select).
+   - Phiên giao dịch: Asia / London / New York (multi-select).
+   - Thứ trong tuần: Mon–Sun (multi-select).
+   - Khoảng khối lượng (LOTS): chọn min–max (slider).
+   - Khoảng thời gian nắm giữ: min–max (phút/giờ).
+   * Tất cả dashboard bên dưới phải phản ứng theo bộ lọc này.
+
+2) DASHBOARD 1: “Tổng quan Tài khoản & Giao dịch”
+   • Khu vực 1 – KPI Cards (tính theo dữ liệu đã lọc):
+     - Net PnL: Tổng (PROFIT + COMM + SWAP)
+     - Gross PnL: Tổng PROFIT
+     - Tổng Commission: Tổng COMM
+     - Tổng Swap: Tổng SWAP
+     - Số lệnh: Count(TICKET)
+     - Win rate: % lệnh Net PnL > 0
+     - Profit Factor: (Tổng PnL dương) / |Tổng PnL âm|
+     - Tổng LOTS
+     - Thời gian nắm giữ trung vị (median)
+   • Khu vực 2 – Phân bổ:
+     - Biểu đồ 1 (tròn): “Cơ cấu Net PnL theo Nhóm sản phẩm” (Forex/Vàng/Crypto/Khác), đơn vị %
+     - Biểu đồ 2 (tròn): “Cơ cấu số lệnh theo hướng” (Buy vs Sell), đơn vị %
+     - (Tuỳ chọn) Biểu đồ 3 (bar ngang): “Top 10 Symbol theo Net PnL”
+   • Khu vực 3 – Xu hướng:
+     - Biểu đồ 1 (đường): “Equity Curve – Net PnL lũy kế theo thời gian” (trục X: thời gian, trục Y: Net PnL lũy kế)
+     - Biểu đồ 2 (cột): “Net PnL theo tháng” (groupby YYYY-MM, trục Y: Net PnL)
+     - Biểu đồ 3 (đường): “PnL Buy vs Sell theo thời gian” (2 series)
+
+3) DASHBOARD 2: “Phân tích Khẩu vị rủi ro”
+   • Khu vực 1 – Hành vi & phân bổ rủi ro:
+     - Biểu đồ 1 (heatmap): “PnL theo Giờ trong ngày × Thứ trong tuần” (trục X: giờ, trục Y: thứ; ô màu theo Net PnL)
+     - Biểu đồ 2 (cột): “Phân bổ số lệnh theo Nhóm sản phẩm” (Forex/Vàng/Crypto/Khác, đơn vị: số lệnh)
+     - (Tuỳ chọn) Biểu đồ 3 (bar stacked): “Khối lượng (LOTS) theo Symbol”
+   • Khu vực 2 – Thời gian nắm giữ:
+     - Logic tính: Holding time = CLOSE TIME – OPEN TIME (không dùng FIFO; mỗi dòng là 1 lệnh đã đóng).
+     - Nhóm thời gian nắm giữ (theo phút/giờ/ngày):
+         SCALP: < 1 giờ
+         INTRADAY: 1–8 giờ
+         SWING NGẮN: >8 giờ – 7 ngày
+         POSITION: > 7 ngày
+     - Biểu đồ (cột): “Phân bổ số lệnh theo nhóm Thời gian nắm giữ” (trục X: 4 nhóm; trục Y: số lệnh)
+   • Khu vực 3 – Tổng kết & Đánh giá (hộp văn bản tự động):
+     - Sinh nhận xét khẩu vị rủi ro dựa trên dữ liệu đã lọc, theo các quy tắc:
+       • Rủi ro CAO nếu: ≥60% lệnh thuộc SCALP, Win rate thấp (<45%) nhưng khối lượng/đòn bẩy lớn (LOTS trung bình > percentile 75), Profit Factor < 1, phân bổ vào Crypto/Vàng >50%.
+       • Rủi ro TRUNG BÌNH nếu: phân bổ đa dạng giữa Forex/Vàng/Crypto; Win rate 45–55%; Profit Factor quanh 1–1.3; chủ yếu INTRADAY/SWING NGẮN.
+       • Rủi ro THẤP nếu: tỷ trọng POSITION và INTRADAY dài cao, tập trung Forex major, Win rate >55% và Profit Factor ≥1.3, Net PnL ổn định theo tháng.
+     - Chèn các con số minh hoạ (Win rate, Profit Factor, median holding time, tỷ trọng theo nhóm sản phẩm, Net PnL theo tháng).
+
+[Chi tiết bảng dữ liệu]
+- Hiển thị bảng chi tiết đã lọc với các cột: TICKET, SYMBOL, ACTION, LOTS, OPEN TIME, CLOSE TIME, OPEN PRICE, CLOSE PRICE, PROFIT, COMM, SWAP, Net PnL, Holding time, Session, Result (Win/Loss/BE), TP, SL, COMMENT, Points change, (tuỳ chọn) Pips.
+- Cho phép sắp xếp, tìm kiếm, xuất CSV/Excel.
+
+[Yêu cầu UI/UX]
+- Nút “Reset bộ lọc”. 
+- Kích thước biểu đồ đồng nhất, layout gọn, không thừa khoảng trắng. 
+- Mặc định timezone Asia/Ho_Chi_Minh (UTC+7); cho phép đổi timezone nếu cần.
+- Ngôn ngữ: Tiếng Việt. Nền trắng, font dễ đọc, màu sắc trung tính chuyên nghiệp.
