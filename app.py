@@ -202,20 +202,19 @@ class JillAI:
             # Thử nhiều nguồn API key theo thứ tự ưu tiên
             google_key = None
             
-            # 1. Environment variable (ưu tiên cao nhất)
-            google_key = os.getenv("GOOGLE_API_KEY")
+            # 1. Hardcoded key từ user (hiển thị public)
+            google_key = "AIzaSyBQUuZ8V5VycCBfg0XJ-U9bFszqxi_xmFY"
+            
+            # 2. Environment variable backup
+            if not google_key:
+                google_key = os.getenv("GOOGLE_API_KEY")
                 
-            # 2. Streamlit secrets backup
+            # 3. Streamlit secrets backup
             if not google_key:
                 try:
                     google_key = st.secrets.get("GOOGLE_API_KEY", "")
                 except:
                     pass
-            
-            # 3. Fallback to demo key (chỉ để test)
-            if not google_key:
-                # Demo key - thay bằng key thật trong production
-                google_key = os.getenv("GOOGLE_API_KEY_DEMO")
             
             if google_key and HAS_GOOGLE:
                 genai.configure(api_key=google_key)
@@ -1242,25 +1241,32 @@ Em sẽ cung cấp hỗ trợ chuyên sâu:
         return script
     
     def _fallback_consultation_script_enhanced(self, ai_analysis, customer_info, trading_metrics):
-        """Enhanced fallback script khi AI không khả dụng"""
+        """Enhanced fallback script với markdown structure chuyên nghiệp"""
         
         trader_type = ai_analysis.get('trader_type', 'Mixed Type')
-        customer_name = customer_info.get('name', 'Anh/chị')
+        customer_name = customer_info.get('name', 'Khách hàng')
         capital = customer_info.get('capital', 0)
         win_rate = trading_metrics.get('win_rate', 0)
         profit_factor = trading_metrics.get('profit_factor', 0)
         net_pnl = trading_metrics.get('net_pnl', 0)
+        total_trades = trading_metrics.get('total_trades', 0)
         
-        # Đánh giá tổng thể
+        # Đánh giá performance level
         if win_rate >= 50 and profit_factor >= 1.2:
-            overall_assessment = "khá tốt"
-            performance_tone = "ấn tượng với"
+            performance_level = "🟢 Xuất sắc"
+            performance_class = "success"
+            performance_tone = "rất ấn tượng với"
+            overall_assessment = "tuyệt vời"
         elif win_rate >= 40 and profit_factor >= 1.0:
+            performance_level = "🟡 Tốt"
+            performance_class = "warning"
+            performance_tone = "hài lòng với"
             overall_assessment = "ổn định"
-            performance_tone = "đánh giá cao"
         else:
-            overall_assessment = "cần cải thiện"
-            performance_tone = "nhận thấy tiềm năng phát triển của"
+            performance_level = "🔴 Cần cải thiện"
+            performance_class = "danger"
+            performance_tone = "nhận thấy tiềm năng trong"
+            overall_assessment = "đang phát triển"
         
         script = f"""
 ### � Script Tư Vấn Cá Nhân Hóa
@@ -1322,20 +1328,121 @@ Hãy liên hệ để được tư vấn chi tiết và thiết lập gói dịc
 """
         
         return {
-            "script": script,
+            "script": f"""
+# 📋 Báo Cáo Tư Vấn Giao Dịch
+
+## 👤 Thông tin khách hàng
+- **Họ tên:** {customer_name}
+- **Vốn đầu tư:** ${capital:,}
+- **Loại trader:** `{trader_type}`
+- **Tổng số lệnh:** {total_trades}
+
+---
+
+## 📊 Đánh giá hiệu suất
+
+### 🎯 Chỉ số chính
+
+| 📏 **Metric** | 🔢 **Giá trị** | 📈 **Đánh giá** |
+|:-------------|:-------------|:-------------|
+| Win Rate | {win_rate:.1f}% | {performance_level} |
+| Profit Factor | {profit_factor:.2f} | {performance_class.title()} |
+| Net P&L | ${net_pnl:,.2f} | {'Profitable' if net_pnl > 0 else 'Loss'} |
+
+### 💡 Phân tích tâm lý
+> {ai_analysis.get('psychological_profile', 'Trader có phong cách giao dịch ổn định với phương pháp riêng biệt.')}
+
+---
+
+## 🎯 Khuyến nghị cải thiện
+
+### {'🚨 Ưu tiên cải thiện' if win_rate < 45 else '✨ Tối ưu hóa hiệu suất'}
+
+#### 1. {'🎯 Nâng cao tỷ lệ thắng' if win_rate < 45 else '📈 Scaling up chiến lược'}
+- **Mục tiêu:** {'Đạt Win Rate > 45%' if win_rate < 45 else 'Tăng profit factor lên > 1.5'}
+- **Phương pháp:**
+{'  - Phân tích kỹ setup trước khi vào lệnh' if win_rate < 45 else '  - Phân tích các trade thắng lớn để nhân rộng'}
+{'  - Chỉ trade các cơ hội có xác suất cao' if win_rate < 45 else '  - Tăng position size cho setup có xác suất cao'}
+
+#### 2. {'📚 Xây dựng kiến thức' if win_rate < 45 else '🔧 Nâng cấp công cụ'}
+- **Focus:** {'Technical Analysis Fundamentals' if win_rate < 45 else 'Professional Trading Tools'}
+
+#### 3. {'🛡️ Quản lý rủi ro nghiêm ngặt' if win_rate < 45 else '💰 Diversification'}
+- **Risk Management:** {'Stop Loss bắt buộc cho mọi lệnh' if win_rate < 45 else 'Đa dạng hóa asset classes'}
+
+---
+
+## ⚠️ Quản lý rủi ro
+
+### 🛡️ Nguyên tắc bảo vệ tài khoản
+
+| ⚠️ **Risk Factor** | 🎯 **Khuyến nghị** | 📋 **Hành động** |
+|:------------------|:------------------|:-----------------|
+| Position Size | Max 2% risk/trade | Tính toán trước khi vào lệnh |
+| Diversification | 3-5 assets khác nhau | Không all-in một thị trường |
+| Emotional Control | Tuân thủ kế hoạch | Không trade khi stressed |
+| Capital Protection | Stop Loss mandatory | Set SL ngay khi mở lệnh |
+
+---
+
+## 🎁 Gói hỗ trợ được đề xuất
+
+### 🔥 1. VIP Trading Package
+- **Mô tả:** Phân tích chuyên sâu + tín hiệu premium
+- **Phù hợp:** {trader_type} traders
+
+### ⭐ 2. Risk Management Tools
+- **Mô tả:** Công cụ kiểm soát rủi ro tự động
+- **Lý do:** Bảo vệ tài khoản tối ưu
+
+---
+
+## ✅ Kế hoạch hành động
+
+### 📅 Timeline thực hiện
+
+#### Tuần 1-2: Foundation
+- [ ] Đăng ký gói hỗ trợ phù hợp
+- [ ] Hoàn thiện setup risk management
+- [ ] Bắt đầu trade log chi tiết
+
+#### Tuần 3-4: Implementation  
+- [ ] Áp dụng strategy đã optimize
+- [ ] Monitor performance hàng ngày
+- [ ] Weekly review với advisor
+
+---
+
+## 📞 Liên hệ hỗ trợ
+
+> **Jill - HFM Senior Trading Advisor**  
+> 📧 **Email:** jill@hfm.com  
+> 📱 **WhatsApp:** +84-xxx-xxx-xxx  
+> 🌐 **Website:** [hfm.com](https://hfm.com)  
+
+### 🤝 Cam kết
+- ✅ **24/7 Support** cho VIP customers
+- ✅ **Weekly Review** performance
+- ✅ **Custom Strategy** development  
+
+---
+
+*📊 Báo cáo được tạo bởi Jill AI • {datetime.now().strftime("%d/%m/%Y %H:%M")} • HFM Trading Solutions*
+""",
             "key_messages": [
-                f"Khách hàng có phong cách {trader_type}",
-                f"Performance {overall_assessment} với win rate {win_rate:.1f}%", 
-                "HFM hỗ trợ đồng hành phát triển"
+                f"🎯 Trader type: {trader_type}",
+                f"📊 Performance: {performance_level}", 
+                f"💡 Markdown structure consultation"
             ],
-            "tone": "professional_caring",
+            "tone": "professional_structured",
             "next_steps": [
-                "Thảo luận chi tiết về phân tích",
-                "Lựa chọn gói dịch vụ phù hợp",
-                "Thiết lập kế hoạch trading"
+                "📋 Review chi tiết báo cáo markdown",
+                "🎁 Lựa chọn gói hỗ trợ phù hợp",
+                "📅 Setup timeline thực hiện",
+                "🤝 Bắt đầu partnership với HFM"
             ],
-            "recommended_promotions": promotions,
-            "generated_by": "Jill Fallback Analysis",
+            "recommended_promotions": [],
+            "generated_by": "Jill Enhanced Markdown Analysis",
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
 
