@@ -218,7 +218,7 @@ class JillAI:
             
             if google_key and HAS_GOOGLE:
                 genai.configure(api_key=google_key)
-                self.gemini_client = genai.GenerativeModel('gemini-pro')
+                self.gemini_client = genai.GenerativeModel('gemini-2.5-flash')
                 st.sidebar.success("✅ Google Gemini AI ready!")
             else:
                 st.sidebar.warning(f"⚠️ Google AI unavailable - Key: {bool(google_key)}, Package: {HAS_GOOGLE}")
@@ -403,6 +403,13 @@ class JillAI:
                 capital_behavior = "Bảo toàn tài sản, đa dạng hóa mạnh, ít thiên lệch tâm lý"
             
             # 2. Phân tích phong cách giao dịch
+            # Create Holding_Time_Hours if not exists
+            if 'Holding_Time_Hours' not in df_processed.columns:
+                if 'CLOSE_TIME' in df_processed.columns and 'OPEN_TIME' in df_processed.columns:
+                    df_processed['Holding_Time_Hours'] = (pd.to_datetime(df_processed['CLOSE_TIME']) - pd.to_datetime(df_processed['OPEN_TIME'])).dt.total_seconds() / 3600
+                else:
+                    df_processed['Holding_Time_Hours'] = 24  # Default to 1 day
+            
             avg_holding_hours = df_processed['Holding_Time_Hours'].median()
             scalp_ratio = (df_processed['Holding_Time_Hours'] < 1).mean() * 100
             
@@ -421,25 +428,40 @@ class JillAI:
             
             # 3. Tính toán metrics quan trọng
             total_trades = len(df_processed)
-            win_rate = (df_processed['Result'] == 'WIN').mean() * 100
-            profit_factor = self._calculate_profit_factor(df_processed)
-            net_pnl = df_processed['Net_PnL'].sum()
+            # Use PROFIT column for win rate calculation
+            win_rate = (df_processed['PROFIT'] > 0).mean() * 100 if 'PROFIT' in df_processed.columns else 50
             
-            # 4. Phân tích sản phẩm ưa thích
-            asset_distribution = df_processed['Asset_Class'].value_counts()
-            if len(asset_distribution) > 0:
-                dominant_asset = asset_distribution.index[0]
-                asset_concentration = (asset_distribution.iloc[0] / total_trades) * 100
+            # Calculate profit factor safely
+            total_profit = df_processed[df_processed['PROFIT'] > 0]['PROFIT'].sum() if 'PROFIT' in df_processed.columns else 0
+            total_loss = abs(df_processed[df_processed['PROFIT'] < 0]['PROFIT'].sum()) if 'PROFIT' in df_processed.columns else 1
+            profit_factor = (total_profit / total_loss) if total_loss > 0 else float('inf')
+            
+            # Use PROFIT column instead of Net_PnL
+            net_pnl = df_processed['PROFIT'].sum() if 'PROFIT' in df_processed.columns else 0
+            
+            # 4. Phân tích sản phẩm ưa thích - Use SYMBOL instead of Asset_Class
+            if 'SYMBOL' in df_processed.columns:
+                asset_distribution = df_processed['SYMBOL'].value_counts()
+                if len(asset_distribution) > 0:
+                    dominant_asset = asset_distribution.index[0]
+                    asset_concentration = (asset_distribution.iloc[0] / total_trades) * 100
+                else:
+                    dominant_asset = "Không xác định"
+                    asset_concentration = 0
             else:
                 dominant_asset = "Không xác định"
                 asset_concentration = 0
             
             # 5. Phân loại trader theo nghiên cứu (5 nhóm chính)
-            trader_classification = self._classify_trader_comprehensive(
-                capital, customer_info.get('experience_years', 0), customer_info.get('age', 30),
-                win_rate, profit_factor, scalp_ratio, asset_concentration,
-                total_trades, trading_style, df_processed
-            )
+            try:
+                trader_classification = self._classify_trader_comprehensive(
+                    capital, customer_info.get('experience_years', 0), customer_info.get('age', 30),
+                    win_rate, profit_factor, scalp_ratio, asset_concentration,
+                    total_trades, trading_style, df_processed
+                )
+            except Exception as e:
+                trader_classification = "Technical Trader"  # Fallback
+                print(f"Warning: trader classification error: {e}")
             
             # 6. AI Analysis nâng cao
             ai_prompt = f"""
@@ -597,7 +619,13 @@ Hãy trả lời JSON:
         # === ASSET SPECIALIST SCORING ===
         if asset_concentration > 70: scores["Asset Specialist"] += 30
         if asset_concentration > 80: scores["Asset Specialist"] += 20  # Bonus for high concentration
-        asset_count = df_processed['Asset_Class'].nunique()
+        
+        # Use SYMBOL instead of Asset_Class
+        if 'SYMBOL' in df_processed.columns:
+            asset_count = df_processed['SYMBOL'].nunique()
+        else:
+            asset_count = 1  # Default value
+        
         if asset_count <= 2: scores["Asset Specialist"] += 25
         if experience_years >= 2: scores["Asset Specialist"] += 15
         
@@ -647,6 +675,9 @@ Hãy trả lời JSON:
         
     def _fallback_analysis_comprehensive(self, capital_group, trading_style, win_rate, profit_factor, trader_classification, df_processed):
         """Phân tích fallback nâng cao khi không có AI"""
+        
+        # Calculate total_trades from df_processed
+        total_trades = len(df_processed) if df_processed is not None else 0
         
         # Đánh giá risk dựa trên metrics
         if win_rate < 40 and profit_factor < 1.0:
@@ -1329,14 +1360,14 @@ Câu hỏi "{user_question}" của anh/chị rất hay, nhưng em cần AI để
     def analyze_trading_behavior(self, df_processed, customer_info):
         """Phân tích hành vi giao dịch với AI"""
         try:
-            # Tính toán các metrics cơ bản
+            # Tính toán các metrics cơ bản TRƯỚC
             metrics = self._calculate_trading_metrics(df_processed)
-            
-            # AI analysis
-            ai_analysis = self.ai_analyze_trading_behavior(df_processed, customer_info)
             
             # Determine trader type
             trader_type = self._classify_trader_type(metrics, customer_info)
+            
+            # AI analysis (có thể sử dụng metrics)
+            ai_analysis = self.ai_analyze_trading_behavior(df_processed, customer_info)
             
             # Comprehensive analysis result
             analysis_result = {
@@ -1359,18 +1390,23 @@ Câu hỏi "{user_question}" của anh/chị rất hay, nhưng em cần AI để
         """Tính toán metrics chi tiết"""
         try:
             total_trades = len(df)
-            winning_trades = len(df[df['Profit'] > 0])
+            winning_trades = len(df[df['PROFIT'] > 0])
             win_rate = (winning_trades / total_trades * 100) if total_trades > 0 else 0
             
-            total_profit = df[df['Profit'] > 0]['Profit'].sum()
-            total_loss = abs(df[df['Profit'] < 0]['Profit'].sum())
+            total_profit = df[df['PROFIT'] > 0]['PROFIT'].sum()
+            total_loss = abs(df[df['PROFIT'] < 0]['PROFIT'].sum())
             profit_factor = (total_profit / total_loss) if total_loss > 0 else float('inf')
             
-            net_pnl = df['Profit'].sum()
+            net_pnl = df['PROFIT'].sum()
+            
+            # Initialize default values
+            avg_holding_hours = 0
+            scalp_ratio = 0
+            trading_style = {'scalp': 0, 'intraday': 0, 'swing': 0, 'position': 0}
             
             # Holding time analysis và Trading style
-            if 'Close Time' in df.columns and 'Open Time' in df.columns:
-                df['Holding_Hours'] = (pd.to_datetime(df['Close Time']) - pd.to_datetime(df['Open Time'])).dt.total_seconds() / 3600
+            if 'CLOSE_TIME' in df.columns and 'OPEN_TIME' in df.columns:
+                df['Holding_Hours'] = (pd.to_datetime(df['CLOSE_TIME']) - pd.to_datetime(df['OPEN_TIME'])).dt.total_seconds() / 3600
                 avg_holding_hours = df['Holding_Hours'].mean()
                 
                 # Count by time periods
@@ -1387,16 +1423,11 @@ Câu hỏi "{user_question}" của anh/chị rất hay, nhưng em cần AI để
                     'swing': round((swing_count / total_trades * 100), 1) if total_trades > 0 else 0,
                     'position': round((position_count / total_trades * 100), 1) if total_trades > 0 else 0
                 }
-            else:
-                avg_holding_hours = 0
-                scalp_ratio = 0
-                trading_style = {'scalp': 0, 'intraday': 0, 'swing': 0, 'position': 0}
             
             # Asset distribution
-            if 'Item' in df.columns:
-                asset_dist = df['Item'].value_counts(normalize=True).head(3).to_dict()
-            else:
-                asset_dist = {}
+            asset_dist = {}
+            if 'SYMBOL' in df.columns:
+                asset_dist = df['SYMBOL'].value_counts(normalize=True).head(3).to_dict()
             
             return {
                 'total_trades': total_trades,
@@ -1405,10 +1436,10 @@ Câu hỏi "{user_question}" của anh/chị rất hay, nhưng em cần AI để
                 'net_pnl': round(net_pnl, 2),
                 'avg_holding_hours': round(avg_holding_hours, 1),
                 'scalp_ratio': round(scalp_ratio, 1),
-                'total_lots': round(df['Lots'].sum(), 1) if 'Lots' in df.columns else 0,
+                'total_lots': round(df['LOTS'].sum(), 1) if 'LOTS' in df.columns else 0,
                 'trading_style': trading_style,
                 'asset_distribution': asset_dist,
-                'avg_lot_size': round(df['Lots'].mean(), 2) if 'Lots' in df.columns else 0
+                'avg_lot_size': round(df['LOTS'].mean(), 2) if 'LOTS' in df.columns else 0
             }
         except Exception as e:
             return {'error': str(e)}
