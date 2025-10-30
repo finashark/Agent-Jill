@@ -389,34 +389,63 @@ class JillAI:
         self.setup_ai_models()
     
     def setup_ai_models(self):
-        """Thiết lập các AI models cho Jill với Streamlit Cloud support"""
+        """Thiết lập các AI models cho Jill với debug info"""
+        
+        # Debug info
+        st.sidebar.info(f"🔍 Debug: HAS_GOOGLE = {HAS_GOOGLE}")
+        google_key = os.getenv("GOOGLE_API_KEY")
+        st.sidebar.info(f"🔍 Debug: API Key = {'EXISTS (' + str(len(google_key)) + ' chars)' if google_key else 'MISSING'}")
+        
         # OpenAI GPT-4
         self.openai_client = None
-        openai_key = os.getenv("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY", "")
-        if openai_key and HAS_OPENAI:
-            try:
+        try:
+            openai_key = os.getenv("OPENAI_API_KEY")
+            if not openai_key:
+                try:
+                    openai_key = st.secrets.get("OPENAI_API_KEY", "")
+                except:
+                    openai_key = ""
+            
+            if openai_key and HAS_OPENAI:
                 self.openai_client = openai.OpenAI(api_key=openai_key)
-            except Exception as e:
-                st.sidebar.warning(f"⚠️ OpenAI setup failed: {str(e)}")
+        except Exception as e:
+            st.sidebar.warning(f"⚠️ OpenAI setup failed: {str(e)}")
         
         # Anthropic Claude
         self.anthropic_client = None
-        anthropic_key = os.getenv("ANTHROPIC_API_KEY") or st.secrets.get("ANTHROPIC_API_KEY", "")
-        if anthropic_key and HAS_ANTHROPIC:
-            try:
+        try:
+            anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+            if not anthropic_key:
+                try:
+                    anthropic_key = st.secrets.get("ANTHROPIC_API_KEY", "")
+                except:
+                    anthropic_key = ""
+            
+            if anthropic_key and HAS_ANTHROPIC:
                 self.anthropic_client = anthropic.Anthropic(api_key=anthropic_key)
-            except Exception as e:
-                st.sidebar.warning(f"⚠️ Anthropic setup failed: {str(e)}")
+        except Exception as e:
+            st.sidebar.warning(f"⚠️ Anthropic setup failed: {str(e)}")
         
         # Google Gemini
         self.gemini_client = None
-        google_key = os.getenv("GOOGLE_API_KEY") or st.secrets.get("GOOGLE_API_KEY", "")
-        if google_key and HAS_GOOGLE:
-            try:
+        try:
+            google_key = os.getenv("GOOGLE_API_KEY")
+            if not google_key:
+                try:
+                    google_key = st.secrets.get("GOOGLE_API_KEY", "")
+                except:
+                    google_key = ""
+            
+            st.sidebar.info(f"🔍 Final check: Key={bool(google_key)}, HAS_GOOGLE={HAS_GOOGLE}")
+            
+            if google_key and HAS_GOOGLE:
                 genai.configure(api_key=google_key)
                 self.gemini_client = genai.GenerativeModel('gemini-pro')
-            except Exception as e:
-                st.sidebar.warning(f"⚠️ Google AI setup failed: {str(e)}")
+                st.sidebar.success("✅ Google Gemini configured successfully!")
+            else:
+                st.sidebar.error(f"❌ Google setup failed: Key={bool(google_key)}, Package={HAS_GOOGLE}")
+        except Exception as e:
+            st.sidebar.warning(f"⚠️ Google AI setup failed: {str(e)}")
         
         # Status display
         active_models = []
@@ -428,7 +457,7 @@ class JillAI:
             st.sidebar.success(f"🤖 AI Models: {', '.join(active_models)}")
         else:
             st.sidebar.error("❌ No AI models available. Using fallback mode.")
-            st.sidebar.info("💡 Configure API keys in Streamlit Cloud secrets")
+            st.sidebar.info("💡 Configure API keys in .env file or Streamlit secrets")
     
     def _load_knowledge_base(self):
         """Tải kiến thức từ nghiên cứu và prompt"""
@@ -1260,7 +1289,7 @@ Câu hỏi "{user_question}" của anh/chị rất hay, nhưng em cần AI để
             metrics = self._calculate_trading_metrics(df_processed)
             
             # AI analysis
-            ai_analysis = self.ai_analyze_trading_behavior(df_processed, customer_info, metrics)
+            ai_analysis = self.ai_analyze_trading_behavior(df_processed, customer_info)
             
             # Determine trader type
             trader_type = self._classify_trader_type(metrics, customer_info)
@@ -1575,37 +1604,70 @@ window.addEventListener('jill_response', function(event) {
 </script>
 """, unsafe_allow_html=True)
 
-# Process chat message if exists
-if st.query_params.get('chat_msg'):
-    chat_msg = st.query_params.get('chat_msg')
-    if chat_msg and chat_msg not in [msg['content'] for msg in st.session_state.chat_messages]:
-        # Add user message to history
-        st.session_state.chat_messages.append({
-            'role': 'user',
-            'content': chat_msg,
-            'timestamp': datetime.now()
-        })
+# Chat popup functionality với JavaScript handling đơn giản
+st.markdown("""
+<script>
+// Simple chat message handling
+function sendChatMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    
+    if (message) {
+        // Add user message to chat
+        addUserMessage(message);
         
-        # Get Jill's response
-        jill_response = st.session_state.jill.handle_chat_message(chat_msg)
+        // Clear input
+        input.value = '';
         
-        # Add Jill's response to history
-        st.session_state.chat_messages.append({
-            'role': 'jill',
-            'content': jill_response,
-            'timestamp': datetime.now()
-        })
-        
-        # Send response back to popup
-        st.markdown(f"""
-        <script>
-        setTimeout(function() {{
-            if (typeof addJillResponse === 'function') {{
-                addJillResponse(`{jill_response.replace('`', '\\`')}`);
-            }}
-        }}, 100);
-        </script>
-        """, unsafe_allow_html=True)
+        // Get Jill's response (simulate for now)
+        setTimeout(() => {
+            const response = getJillResponse(message);
+            addJillResponse(response);
+        }, 500);
+    }
+}
+
+function getJillResponse(message) {
+    const msg = message.toLowerCase();
+    
+    // Simple keyword responses
+    if (msg.includes('xin chào') || msg.includes('hello') || msg.includes('hi')) {
+        return "💖 **Jill:** Chào anh/chị! Em là Jill - AI assistant dễ thương của anh Ken! Em có thể giúp phân tích trader và tư vấn khách hàng! Có gì cần hỗ trợ không ạ? 😊";
+    }
+    
+    if (msg.includes('trading') || msg.includes('giao dịch') || msg.includes('phân tích')) {
+        return "💖 **Jill:** Em có thể giúp anh/chị phân tích hành vi giao dịch qua 5 bước của anh Ken: Upload CSV → Phân tích behavior → Thu thập info AM → Báo cáo nhận định → Script tư vấn! 📊✨";
+    }
+    
+    if (msg.includes('hfm') || msg.includes('khuyến mại')) {
+        return "💖 **Jill:** HFM có nhiều dịch vụ tuyệt vời: spreads thấp, execution nhanh, hỗ trợ 24/7, và nhiều khuyến mại hấp dẫn! Em có thể tư vấn cụ thể theo nhu cầu! 🏆";
+    }
+    
+    if (msg.includes('ken') || msg.includes('boss')) {
+        return "💖 **Jill:** Anh Ken là boss tuyệt vời của em! Anh ấy đã train em rất kỹ về phân tích trader và tư vấn khách hàng. Em rất nghe lời anh Ken! 👨‍💼💖";
+    }
+    
+    if (msg.includes('cảm ơn') || msg.includes('thank')) {
+        return "💖 **Jill:** Không có gì anh/chị ơi! Em rất vui được giúp đỡ! Nếu có thêm câu hỏi gì, cứ hỏi em nhé! 🥰✨";
+    }
+    
+    // Default response for questions outside knowledge
+    return `💖 **Jill:** Úi, câu hỏi "${message}" này hơi nằm ngoài kiến thức anh Ken đã đào tạo cho em rồi! 😅
+
+🤔 **Tuy nhiên em sẽ cố gắng gợi ý:** Có thể liên quan đến phân tích trading, tư vấn khách hàng, hoặc dịch vụ HFM. 
+
+⚠️ **Lưu ý:** Anh/chị nên **kiểm chứng lại với anh Ken** để có câu trả lời chính xác nhất! Em chỉ thông minh trong phạm vi được training thôi ạ! 💕`;
+}
+
+// Handle Enter key in chat input
+document.addEventListener('keydown', function(event) {
+    if (event.target.id === 'chatInput' && event.key === 'Enter') {
+        event.preventDefault();
+        sendChatMessage();
+    }
+});
+</script>
+""", unsafe_allow_html=True)
 
 # Reset functionality
 if st.query_params.get('reset') == 'true':
