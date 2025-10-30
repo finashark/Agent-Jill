@@ -11,10 +11,13 @@ from typing import Dict, List, Tuple
 import re
 import json
 import os
-from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Try to load environment variables (optional for deployment)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # Streamlit Cloud doesn't need dotenv
 
 # AI Libraries with error handling
 try:
