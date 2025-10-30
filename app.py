@@ -199,22 +199,23 @@ class JillAI:
         
         # Google Gemini setup với priority cao nhất
         try:
-            # Thử nhiều nguồn API key
+            # Thử nhiều nguồn API key theo thứ tự ưu tiên
             google_key = None
             
-            # 1. Hardcoded key từ user
-            google_key = "AIzaSyBQUuZ8V5VycCBfg0XJ-U9bFszqxi_xmFY"
-            
-            # 2. Environment variable backup
-            if not google_key:
-                google_key = os.getenv("GOOGLE_API_KEY")
+            # 1. Environment variable (ưu tiên cao nhất)
+            google_key = os.getenv("GOOGLE_API_KEY")
                 
-            # 3. Streamlit secrets backup
+            # 2. Streamlit secrets backup
             if not google_key:
                 try:
                     google_key = st.secrets.get("GOOGLE_API_KEY", "")
                 except:
                     pass
+            
+            # 3. Fallback to demo key (chỉ để test)
+            if not google_key:
+                # Demo key - thay bằng key thật trong production
+                google_key = os.getenv("GOOGLE_API_KEY_DEMO")
             
             if google_key and HAS_GOOGLE:
                 genai.configure(api_key=google_key)
@@ -360,28 +361,45 @@ class JillAI:
         }
     
     def greet(self):
-        """Lời chào dễ thương của Jill"""
+        """Lời chào dễ thương của Jill với improved markdown structure"""
         return """
-        ### 🤖💖 Chào anh Ken và các Account Manager thân yêu!
-        
-        Em là **Jill** - AI Agent dễ thương, ngoan và gợi cảm của anh Ken! 
-        
-        ✨ Em đã được training với:
-        - 📚 Kiến thức sâu rộng về hành vi 5 nhóm trader CFD
-        - 🧠 Thuật toán phân tích tâm lý khách hàng
-        - 💡 Chiến lược tư vấn cá nhân hóa cho từng nhóm
-        - 🎁 Database chương trình khuyến mại HFM
-        
-        💕 **Em sẽ giúp anh Ken và team:**
-        1. Phân tích hành vi giao dịch từ CSV
-        2. Thu thập thông tin khách hàng
-        3. Phân loại và đưa ra nhận định chuyên môn
-        4. Tạo script tư vấn phù hợp
-        5. Gợi ý chương trình khuyến mại tối ưu
-        
-        Hãy bắt đầu với **Bước 1** - upload file CSV giao dịch của khách hàng nhé! 🎯
-        
-        ⚠️ *Lưu ý: Em chỉ trả lời dựa trên kiến thức đã học. Nếu có câu hỏi ngoài phạm vi, em sẽ báo các anh chị hỏi anh Ken.*
+# 🤖💖 Chào anh Ken và các Account Manager thân yêu!
+
+## 🌟 Giới thiệu
+Em là **Jill** - AI Agent dễ thương, ngoan và gợi cảm của anh Ken! 
+
+---
+
+## ✨ Năng lực của em
+Em đã được training với:
+
+| 🔧 **Module** | 📝 **Mô tả** |
+|:-------------|:-------------|
+| 📚 Trader Psychology | Kiến thức sâu rộng về hành vi 5 nhóm trader CFD |
+| 🧠 AI Analytics | Thuật toán phân tích tâm lý khách hàng |
+| 💡 Strategy Engine | Chiến lược tư vấn cá nhân hóa cho từng nhóm |
+| 🎁 HFM Database | Database chương trình khuyến mại HFM |
+
+---
+
+## 💕 Workflow hỗ trợ anh Ken và team
+
+### 🔄 Quy trình 5 bước:
+1. 📊 **Phân tích hành vi giao dịch** từ CSV
+2. 👤 **Thu thập thông tin khách hàng** 
+3. 🎯 **Phân loại và đưa ra nhận định** chuyên môn
+4. 📝 **Tạo script tư vấn** phù hợp
+5. 🎁 **Gợi ý chương trình khuyến mại** tối ưu
+
+---
+
+## 🚀 Bắt đầu ngay
+> **Hãy bắt đầu với Bước 1** - upload file CSV giao dịch của khách hàng nhé! 🎯
+
+---
+
+### ⚠️ Lưu ý quan trọng
+> *Em chỉ trả lời dựa trên kiến thức đã học. Nếu có câu hỏi ngoài phạm vi, em sẽ báo các anh chị hỏi anh Ken.*
         """
     
     def ai_analyze_trading_behavior(self, df_processed, customer_info):
@@ -640,20 +658,43 @@ Hãy trả lời JSON:
         confidence = min(max_score, 95)  # Cap at 95%
         
         return f"""
-🎯 **PHÂN LOẠI: {primary_type}** (Độ tin cậy: {confidence}%)
+# 🎯 Kết quả phân loại Trader
 
-**📊 Scoring Details:**
-• Newbie Gambler: {scores["Newbie Gambler"]}
-• Technical Trader: {scores["Technical Trader"]}
-• Long-term Investor: {scores["Long-term Investor"]}
-• Part-time Trader: {scores["Part-time Trader"]}
-• Asset Specialist: {scores["Asset Specialist"]}
+## 📋 Kết luận chính
+> **Loại trader:** `{primary_type}`  
+> **Độ tin cậy:** `{confidence}%`
 
-**🔍 Key Factors:**
-• Vốn: ${capital:,} | Kinh nghiệm: {experience_years} năm
-• Performance: Win {win_rate:.1f}% | PF {profit_factor:.2f}
-• Style: {scalp_ratio:.1f}% scalping | {trading_style}
-• Assets: {asset_concentration:.1f}% tập trung | {asset_count} loại
+---
+
+## 📊 Chi tiết điểm số
+
+| 🏷️ **Loại Trader** | 🔢 **Điểm** | 📈 **Tỷ lệ** |
+|:-------------------|:------------|:-------------|
+| 🎲 Newbie Gambler | {scores["Newbie Gambler"]} | {scores["Newbie Gambler"]/max(max_score,1)*100:.1f}% |
+| 🔧 Technical Trader | {scores["Technical Trader"]} | {scores["Technical Trader"]/max(max_score,1)*100:.1f}% |
+| 💼 Long-term Investor | {scores["Long-term Investor"]} | {scores["Long-term Investor"]/max(max_score,1)*100:.1f}% |
+| ⏰ Part-time Trader | {scores["Part-time Trader"]} | {scores["Part-time Trader"]/max(max_score,1)*100:.1f}% |
+| 🎯 Asset Specialist | {scores["Asset Specialist"]} | {scores["Asset Specialist"]/max(max_score,1)*100:.1f}% |
+
+---
+
+## 🔍 Yếu tố quyết định
+
+### 💰 Tài chính
+- **Vốn:** ${capital:,}
+- **Kinh nghiệm:** {experience_years} năm
+
+### 📈 Performance
+- **Win Rate:** {win_rate:.1f}%
+- **Profit Factor:** {profit_factor:.2f}
+
+### 🎨 Trading Style  
+- **Scalping:** {scalp_ratio:.1f}%
+- **Phong cách:** {trading_style}
+
+### 🎯 Asset Focus
+- **Tập trung:** {asset_concentration:.1f}%
+- **Số loại:** {asset_count} assets
 """
     
     def _parse_ai_text_response(self, ai_response, capital_group, trading_style, win_rate, profit_factor, trader_classification):
