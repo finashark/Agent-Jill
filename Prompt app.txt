@@ -1,0 +1,104 @@
+Hãy t?o 1 app dành cho chuyên viên phân tích giao d?ch chênh l?ch giá (Forex, Vàng, Crypto nh? Bitcoin). 
+App cho phép ng??i dùng upload sao kê giao d?ch tài kho?n (CSV). App s? x? lý, chu?n hoá và trích xu?t d? li?u, t?o b? l?c ??ng, hi?n th? b?ng d? li?u chi ti?t và các dashboard phân tích. 
+Giao di?n n?n tr?ng, ngôn ng? Ti?ng Vi?t, thi?t k? chuyên nghi?p và thân thi?n.
+
+[Chu?n hoá d? li?u & ánh x? c?t]
+- C? g?ng t? nh?n di?n và ánh x? tên c?t ph? bi?n t? file CSV c?a broker:
+  • Mã l?nh: TICKET
+  • S?n ph?m / C?p: SYMBOL (ví d?: EURUSD, XAUUSD, BTCUSD,…)
+  • Lo?i l?nh (h??ng): ACTION (Buy/Sell). Quy ??c Direction = +1 (Buy), -1 (Sell)
+  • Kh?i l??ng: LOTS (lot)
+  • Th?i gian m? l?nh: OPEN TIME
+  • Th?i gian ?óng l?nh: CLOSE TIME
+  • Giá m?: OPEN PRICE
+  • Giá ?óng: CLOSE PRICE
+  • L?i nhu?n: PROFIT
+  • Phí hoa h?ng: COMM
+  • Phí qua ?êm: SWAP
+  • TP: T/P ; SL: S/L ; Ghi chú: COMMENT
+- T?o các tr??ng tính toán (feature engineering):
+  • Net PnL = PROFIT + COMM + SWAP
+  • Holding time = CLOSE TIME – OPEN TIME (hi?n th? phút/gi?/ngày)
+  • Points change (?i?m): Direction * (CLOSE PRICE – OPEN PRICE)
+  • Phân lo?i nhóm s?n ph?m (Asset class):
+      - Forex: n?u SYMBOL ghép t? 2 mã ti?n t? (USD, EUR, JPY, GBP, AUD, NZD, CHF, CAD, CNH, SGD…)
+      - Kim lo?i: SYMBOL ch?a XAU, XAG
+      - Crypto: SYMBOL ch?a BTC, ETH, SOL, … ho?c k?t thúc USD/USDT
+      - Khác: còn l?i (Index/CFD hàng hoá)
+  • Phiên giao d?ch (theo Asia/Ho_Chi_Minh, UTC+7):
+      - Á (Asia): 06:00–13:59
+      - Âu (London): 14:00–21:59
+      - M? (New York): 22:00–05:59
+  • K?t qu? l?nh: WIN/LOSS/BE d?a trên Net PnL ( >0 / <0 / =0 )
+  • (Tu? ch?n) Pips: pips = Points change / pip_size_map[SYMBOL]
+      - pip_size_map m?c ??nh:
+          FX không JPY: 0.0001 ; c?p có JPY: 0.01
+          XAUUSD: 0.01 ; XAGUSD: 0.01
+          BTCUSD: 1.0 ; ETHUSD: 0.1
+      - Cho phép ng??i dùng tu? ch?nh pip_size_map n?u broker ??nh ngh?a khác.
+
+[TÍNH N?NG 1: B?ng ?i?u khi?n Phân tích]
+T?o thêm Tab “B?ng ?i?u khi?n Phân tích” ch?a KHU V?C B? L?C và các DASHBOARD. 
+Các bi?u ?? trong cùng m?t hàng ph?i ??ng nh?t chi?u cao, cân ??i, không d? kho?ng tr?ng. Có nút “Reset b? l?c”.
+
+1) KHU V?C B? L?C (??t trên cùng):
+   - Kho?ng th?i gian: ch?n theo OPEN TIME ho?c CLOSE TIME (m?c ??nh dùng CLOSE TIME).
+   - Lo?i l?nh (h??ng): Buy, Sell (multi-select).
+   - Nhóm s?n ph?m: Forex / Vàng (XAU/XAG) / Crypto / Khác (multi-select).
+   - Symbol/C?p: ô tìm ki?m & ch?n nhi?u SYMBOL.
+   - K?t qu? l?nh: Win / Loss / BE (multi-select).
+   - Phiên giao d?ch: Asia / London / New York (multi-select).
+   - Th? trong tu?n: Mon–Sun (multi-select).
+   - Kho?ng kh?i l??ng (LOTS): ch?n min–max (slider).
+   - Kho?ng th?i gian n?m gi?: min–max (phút/gi?).
+   * T?t c? dashboard bên d??i ph?i ph?n ?ng theo b? l?c này.
+
+2) DASHBOARD 1: “T?ng quan Tài kho?n & Giao d?ch”
+   • Khu v?c 1 – KPI Cards (tính theo d? li?u ?ã l?c):
+     - Net PnL: T?ng (PROFIT + COMM + SWAP)
+     - Gross PnL: T?ng PROFIT
+     - T?ng Commission: T?ng COMM
+     - T?ng Swap: T?ng SWAP
+     - S? l?nh: Count(TICKET)
+     - Win rate: % l?nh Net PnL > 0
+     - Profit Factor: (T?ng PnL d??ng) / |T?ng PnL âm|
+     - T?ng LOTS
+     - Th?i gian n?m gi? trung v? (median)
+   • Khu v?c 2 – Phân b?:
+     - Bi?u ?? 1 (tròn): “C? c?u Net PnL theo Nhóm s?n ph?m” (Forex/Vàng/Crypto/Khác), ??n v? %
+     - Bi?u ?? 2 (tròn): “C? c?u s? l?nh theo h??ng” (Buy vs Sell), ??n v? %
+     - (Tu? ch?n) Bi?u ?? 3 (bar ngang): “Top 10 Symbol theo Net PnL”
+   • Khu v?c 3 – Xu h??ng:
+     - Bi?u ?? 1 (???ng): “Equity Curve – Net PnL l?y k? theo th?i gian” (tr?c X: th?i gian, tr?c Y: Net PnL l?y k?)
+     - Bi?u ?? 2 (c?t): “Net PnL theo tháng” (groupby YYYY-MM, tr?c Y: Net PnL)
+     - Bi?u ?? 3 (???ng): “PnL Buy vs Sell theo th?i gian” (2 series)
+
+3) DASHBOARD 2: “Phân tích Kh?u v? r?i ro”
+   • Khu v?c 1 – Hành vi & phân b? r?i ro:
+     - Bi?u ?? 1 (heatmap): “PnL theo Gi? trong ngày × Th? trong tu?n” (tr?c X: gi?, tr?c Y: th?; ô màu theo Net PnL)
+     - Bi?u ?? 2 (c?t): “Phân b? s? l?nh theo Nhóm s?n ph?m” (Forex/Vàng/Crypto/Khác, ??n v?: s? l?nh)
+     - (Tu? ch?n) Bi?u ?? 3 (bar stacked): “Kh?i l??ng (LOTS) theo Symbol”
+   • Khu v?c 2 – Th?i gian n?m gi?:
+     - Logic tính: Holding time = CLOSE TIME – OPEN TIME (không dùng FIFO; m?i dòng là 1 l?nh ?ã ?óng).
+     - Nhóm th?i gian n?m gi? (theo phút/gi?/ngày):
+         SCALP: < 1 gi?
+         INTRADAY: 1–8 gi?
+         SWING NG?N: >8 gi? – 7 ngày
+         POSITION: > 7 ngày
+     - Bi?u ?? (c?t): “Phân b? s? l?nh theo nhóm Th?i gian n?m gi?” (tr?c X: 4 nhóm; tr?c Y: s? l?nh)
+   • Khu v?c 3 – T?ng k?t & ?ánh giá (h?p v?n b?n t? ??ng):
+     - Sinh nh?n xét kh?u v? r?i ro d?a trên d? li?u ?ã l?c, theo các quy t?c:
+       • R?i ro CAO n?u: ?60% l?nh thu?c SCALP, Win rate th?p (<45%) nh?ng kh?i l??ng/?òn b?y l?n (LOTS trung bình > percentile 75), Profit Factor < 1, phân b? vào Crypto/Vàng >50%.
+       • R?i ro TRUNG BÌNH n?u: phân b? ?a d?ng gi?a Forex/Vàng/Crypto; Win rate 45–55%; Profit Factor quanh 1–1.3; ch? y?u INTRADAY/SWING NG?N.
+       • R?i ro TH?P n?u: t? tr?ng POSITION và INTRADAY dài cao, t?p trung Forex major, Win rate >55% và Profit Factor ?1.3, Net PnL ?n ??nh theo tháng.
+     - Chèn các con s? minh ho? (Win rate, Profit Factor, median holding time, t? tr?ng theo nhóm s?n ph?m, Net PnL theo tháng).
+
+[Chi ti?t b?ng d? li?u]
+- Hi?n th? b?ng chi ti?t ?ã l?c v?i các c?t: TICKET, SYMBOL, ACTION, LOTS, OPEN TIME, CLOSE TIME, OPEN PRICE, CLOSE PRICE, PROFIT, COMM, SWAP, Net PnL, Holding time, Session, Result (Win/Loss/BE), TP, SL, COMMENT, Points change, (tu? ch?n) Pips.
+- Cho phép s?p x?p, tìm ki?m, xu?t CSV/Excel.
+
+[Yêu c?u UI/UX]
+- Nút “Reset b? l?c”. 
+- Kích th??c bi?u ?? ??ng nh?t, layout g?n, không th?a kho?ng tr?ng. 
+- M?c ??nh timezone Asia/Ho_Chi_Minh (UTC+7); cho phép ??i timezone n?u c?n.
+- Ngôn ng?: Ti?ng Vi?t. N?n tr?ng, font d? ??c, màu s?c trung tính chuyên nghi?p.
