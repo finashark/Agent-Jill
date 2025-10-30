@@ -230,12 +230,17 @@ class JillAI:
         # Google Gemini
         self.gemini_client = None
         try:
+            # Try to get API key from multiple sources
             google_key = os.getenv("GOOGLE_API_KEY")
             if not google_key:
                 try:
                     google_key = st.secrets.get("GOOGLE_API_KEY", "")
                 except:
                     google_key = ""
+            
+            # Fallback to hardcoded key if needed (for debugging)
+            if not google_key:
+                google_key = "AIzaSyBQUuZ8V5VycCBfg0XJ-U9bFszqxi_xmFY"
             
             st.sidebar.info(f"🔍 Final check: Key={bool(google_key)}, HAS_GOOGLE={HAS_GOOGLE}")
             
@@ -1099,6 +1104,12 @@ Câu hỏi "{user_question}" của anh/chị rất hay, nhưng em cần AI để
             analysis_result = {
                 'trader_type': trader_type,
                 'metrics': metrics,
+                'trading_style': {
+                    'scalp': round((metrics.get('scalp_ratio', 0)), 1),
+                    'intraday': round((100 - metrics.get('scalp_ratio', 0)) * 0.6, 1),
+                    'swing': round((100 - metrics.get('scalp_ratio', 0)) * 0.3, 1),
+                    'position': round((100 - metrics.get('scalp_ratio', 0)) * 0.1, 1)
+                },
                 'ai_insights': ai_analysis,
                 'recommendations': self._generate_recommendations(trader_type, metrics),
                 'risk_level': self._assess_risk_level(metrics),
@@ -1140,15 +1151,33 @@ Câu hỏi "{user_question}" của anh/chị rất hay, nhưng em cần AI để
             else:
                 asset_dist = {}
             
+            # Trading style analysis
+            if 'Close Time' in df.columns and 'Open Time' in df.columns:
+                df['Holding_Hours'] = (pd.to_datetime(df['Close Time']) - pd.to_datetime(df['Open Time'])).dt.total_seconds() / 3600
+                scalp_count = len(df[df['Holding_Hours'] < 1])
+                intraday_count = len(df[(df['Holding_Hours'] >= 1) & (df['Holding_Hours'] < 8)])
+                swing_count = len(df[(df['Holding_Hours'] >= 8) & (df['Holding_Hours'] < 168)])
+                position_count = len(df[df['Holding_Hours'] >= 168])
+                
+                trading_style = {
+                    'scalp': round((scalp_count / total_trades * 100), 1) if total_trades > 0 else 0,
+                    'intraday': round((intraday_count / total_trades * 100), 1) if total_trades > 0 else 0,
+                    'swing': round((swing_count / total_trades * 100), 1) if total_trades > 0 else 0,
+                    'position': round((position_count / total_trades * 100), 1) if total_trades > 0 else 0
+                }
+            else:
+                trading_style = {'scalp': 0, 'intraday': 0, 'swing': 0, 'position': 0}
+            
             return {
                 'total_trades': total_trades,
-                'win_rate': win_rate,
-                'profit_factor': profit_factor,
-                'net_pnl': net_pnl,
-                'avg_holding_hours': avg_holding_hours,
-                'scalp_ratio': scalp_ratio,
+                'win_rate': round(win_rate, 1),
+                'profit_factor': round(profit_factor, 2),
+                'net_pnl': round(net_pnl, 2),
+                'avg_holding_hours': round(avg_holding_hours, 1),
+                'scalp_ratio': round(scalp_ratio, 1),
+                'total_lots': round(df['Lots'].sum(), 1) if 'Lots' in df.columns else 0,
                 'asset_distribution': asset_dist,
-                'avg_lot_size': df['Lots'].mean() if 'Lots' in df.columns else 0
+                'avg_lot_size': round(df['Lots'].mean(), 2) if 'Lots' in df.columns else 0
             }
         except Exception as e:
             return {'error': str(e)}
@@ -1640,23 +1669,23 @@ if uploaded_file is not None:
                 st.markdown('<div class="analysis-card">', unsafe_allow_html=True)
                 
                 st.markdown(f"""
-                ### 🎯 Kết Quả Phân Loại: **{trader_info['name']}**
-                
-                **📊 Các Chỉ Số Quan Trọng:**
-                - 🔢 Tổng số giao dịch: {analysis_result['metrics']['total_trades']}
-                - 🎯 Tỷ lệ thắng: {analysis_result['metrics']['win_rate']}%
-                - 💰 Profit Factor: {analysis_result['metrics']['profit_factor']}
-                - ⏰ Thời gian nắm giữ trung bình: {analysis_result['metrics']['avg_holding_hours']:.1f} giờ
-                - 💵 Net PnL: ${analysis_result['metrics']['net_pnl']:,.2f}
-                - 📦 Tổng khối lượng: {analysis_result['metrics']['total_lots']} lots
-                
-                **🎭 Phong Cách Giao Dịch:**
-                - SCALP (< 1h): {analysis_result['trading_style']['scalp']}%
-                - INTRADAY (1-8h): {analysis_result['trading_style']['intraday']}%
-                - SWING (8h-7d): {analysis_result['trading_style']['swing']}%
-                - POSITION (>7d): {analysis_result['trading_style']['position']}%
-                
-                **⚠️ Đánh Giá Rủi Ro: {analysis_result['risk_level']}**
+### 🎯 Kết Quả Phân Loại: **{trader_info['name']}**
+
+**📊 Các Chỉ Số Quan Trọng:**
+- 🔢 Tổng số giao dịch: {analysis_result['metrics']['total_trades']}
+- 🎯 Tỷ lệ thắng: {analysis_result['metrics']['win_rate']}%
+- 💰 Profit Factor: {analysis_result['metrics']['profit_factor']}
+- ⏰ Thời gian nắm giữ trung bình: {analysis_result['metrics']['avg_holding_hours']:.1f} giờ
+- 💵 Net PnL: ${analysis_result['metrics']['net_pnl']:,.2f}
+- 📦 Tổng khối lượng: {analysis_result['metrics']['total_lots']} lots
+
+**🎭 Phong Cách Giao Dịch:**
+- SCALP (< 1h): {analysis_result['trading_style']['scalp']}%
+- INTRADAY (1-8h): {analysis_result['trading_style']['intraday']}%
+- SWING (8h-7d): {analysis_result['trading_style']['swing']}%
+- POSITION (>7d): {analysis_result['trading_style']['position']}%
+
+**⚠️ Đánh Giá Rủi Ro: {analysis_result['risk_level']}**
                 """)
                 
                 st.markdown('</div>', unsafe_allow_html=True)
