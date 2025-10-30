@@ -2201,7 +2201,7 @@ if uploaded_file is not None:
                 names=asset_dist.index, 
                 title="Phân bổ theo nhóm tài sản"
             )
-            st.plotly_chart(fig_asset, use_container_width=True)
+            st.plotly_chart(fig_asset, width='stretch')
         
         with col2:
             # Trading style distribution
@@ -2211,7 +2211,7 @@ if uploaded_file is not None:
                 y=style_dist.values,
                 title="Phong cách giao dịch"
             )
-            st.plotly_chart(fig_style, use_container_width=True)
+            st.plotly_chart(fig_style, width='stretch')
         
         # === BƯỚC 3: THU THẬP THÔNG TIN KHÁCH HÀNG ===
         st.markdown('<div class="step-header">👤 BƯỚC 3: Thông Tin Khách Hàng Từ AM</div>', unsafe_allow_html=True)
@@ -2244,7 +2244,7 @@ if uploaded_file is not None:
                     default=["Thu nhập đều đặn"]
                 )
             
-            submit_info = st.form_submit_button("💾 Lưu Thông Tin & Phân Tích", use_container_width=True)
+            submit_info = st.form_submit_button("💾 Lưu Thông Tin & Phân Tích", width='stretch')
         
         if submit_info and customer_name:
             # Chuyển đổi experience sang số năm
