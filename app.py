@@ -1268,6 +1268,14 @@ Em sẽ cung cấp hỗ trợ chuyên sâu:
             performance_tone = "nhận thấy tiềm năng trong"
             overall_assessment = "đang phát triển"
         
+        # Tạo recommended promotions dựa trên trader type
+        promotions = self._suggest_promotions_intelligent(trader_type, ai_analysis, customer_info)
+        promo_list = []
+        for promo in promotions:
+            promo_list.append(f"- **{promo['name']}:** {promo['description']}")
+        
+        promotions_text = "\n".join(promo_list) if promo_list else "- **Starter Package:** Gói cơ bản phù hợp với mọi trader"
+        
         script = f"""
 ### � Script Tư Vấn Cá Nhân Hóa
 
@@ -1327,8 +1335,7 @@ Hãy liên hệ để được tư vấn chi tiết và thiết lập gói dịc
 *💖 Script được tạo bởi Jill AI với sự quan tâm chân thành*
 """
         
-        return {
-            "script": f"""
+        return f"""
 # 📋 Báo Cáo Tư Vấn Giao Dịch
 
 ## 👤 Thông tin khách hàng
@@ -1360,56 +1367,15 @@ Hãy liên hệ để được tư vấn chi tiết và thiết lập gói dịc
 
 #### 1. {'🎯 Nâng cao tỷ lệ thắng' if win_rate < 45 else '📈 Scaling up chiến lược'}
 - **Mục tiêu:** {'Đạt Win Rate > 45%' if win_rate < 45 else 'Tăng profit factor lên > 1.5'}
-- **Phương pháp:**
-{'  - Phân tích kỹ setup trước khi vào lệnh' if win_rate < 45 else '  - Phân tích các trade thắng lớn để nhân rộng'}
-{'  - Chỉ trade các cơ hội có xác suất cao' if win_rate < 45 else '  - Tăng position size cho setup có xác suất cao'}
 
 #### 2. {'📚 Xây dựng kiến thức' if win_rate < 45 else '🔧 Nâng cấp công cụ'}
 - **Focus:** {'Technical Analysis Fundamentals' if win_rate < 45 else 'Professional Trading Tools'}
-
-#### 3. {'🛡️ Quản lý rủi ro nghiêm ngặt' if win_rate < 45 else '💰 Diversification'}
-- **Risk Management:** {'Stop Loss bắt buộc cho mọi lệnh' if win_rate < 45 else 'Đa dạng hóa asset classes'}
-
----
-
-## ⚠️ Quản lý rủi ro
-
-### 🛡️ Nguyên tắc bảo vệ tài khoản
-
-| ⚠️ **Risk Factor** | 🎯 **Khuyến nghị** | 📋 **Hành động** |
-|:------------------|:------------------|:-----------------|
-| Position Size | Max 2% risk/trade | Tính toán trước khi vào lệnh |
-| Diversification | 3-5 assets khác nhau | Không all-in một thị trường |
-| Emotional Control | Tuân thủ kế hoạch | Không trade khi stressed |
-| Capital Protection | Stop Loss mandatory | Set SL ngay khi mở lệnh |
 
 ---
 
 ## 🎁 Gói hỗ trợ được đề xuất
 
-### 🔥 1. VIP Trading Package
-- **Mô tả:** Phân tích chuyên sâu + tín hiệu premium
-- **Phù hợp:** {trader_type} traders
-
-### ⭐ 2. Risk Management Tools
-- **Mô tả:** Công cụ kiểm soát rủi ro tự động
-- **Lý do:** Bảo vệ tài khoản tối ưu
-
----
-
-## ✅ Kế hoạch hành động
-
-### 📅 Timeline thực hiện
-
-#### Tuần 1-2: Foundation
-- [ ] Đăng ký gói hỗ trợ phù hợp
-- [ ] Hoàn thiện setup risk management
-- [ ] Bắt đầu trade log chi tiết
-
-#### Tuần 3-4: Implementation  
-- [ ] Áp dụng strategy đã optimize
-- [ ] Monitor performance hàng ngày
-- [ ] Weekly review với advisor
+{promotions_text}
 
 ---
 
@@ -1417,34 +1383,12 @@ Hãy liên hệ để được tư vấn chi tiết và thiết lập gói dịc
 
 > **Jill - HFM Senior Trading Advisor**  
 > 📧 **Email:** jill@hfm.com  
-> 📱 **WhatsApp:** +84-xxx-xxx-xxx  
 > 🌐 **Website:** [hfm.com](https://hfm.com)  
-
-### 🤝 Cam kết
-- ✅ **24/7 Support** cho VIP customers
-- ✅ **Weekly Review** performance
-- ✅ **Custom Strategy** development  
 
 ---
 
 *📊 Báo cáo được tạo bởi Jill AI • {datetime.now().strftime("%d/%m/%Y %H:%M")} • HFM Trading Solutions*
-""",
-            "key_messages": [
-                f"🎯 Trader type: {trader_type}",
-                f"📊 Performance: {performance_level}", 
-                f"💡 Markdown structure consultation"
-            ],
-            "tone": "professional_structured",
-            "next_steps": [
-                "📋 Review chi tiết báo cáo markdown",
-                "🎁 Lựa chọn gói hỗ trợ phù hợp",
-                "📅 Setup timeline thực hiện",
-                "🤝 Bắt đầu partnership với HFM"
-            ],
-            "recommended_promotions": [],
-            "generated_by": "Jill Enhanced Markdown Analysis",
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
+"""
 
     def ai_chat_response(self, user_question, context=""):
         """Chat thông minh với Jill sử dụng AI - trả lời linh hoạt và dễ thương"""
@@ -1667,8 +1611,9 @@ Câu hỏi "{user_question}" của anh/chị rất hay, nhưng em cần AI để
             if self.openai_client or self.anthropic_client or self.gemini_client:
                 return self.ai_generate_consultation_script(analysis_result, customer_info, metrics)
             else:
-                # Fallback to template-based script
-                return self._fallback_consultation_script(analysis_result, customer_info)
+                # Fallback to enhanced template-based script
+                ai_analysis = analysis_result.get('ai_insights', {})
+                return self._fallback_consultation_script_enhanced(ai_analysis, customer_info, metrics)
                 
         except Exception as e:
             return f"Lỗi tạo script: {str(e)}"
@@ -2315,10 +2260,19 @@ if uploaded_file is not None:
                 
                 # Script tư vấn
                 st.markdown("### 🗣️ Script Tư Vấn Cá Nhân Hóa")
-                script = st.session_state.jill.generate_consultation_script(analysis_result, customer_info)
-                st.markdown('<div class="analysis-card">', unsafe_allow_html=True)
-                st.markdown(script)
-                st.markdown('</div>', unsafe_allow_html=True)
+                script_result = st.session_state.jill.generate_consultation_script(analysis_result, customer_info)
+                
+                # Xử lý script output - có thể là dict hoặc string
+                if isinstance(script_result, dict):
+                    script_text = script_result.get('script', str(script_result))
+                else:
+                    script_text = str(script_result)
+                
+                # Display trong container đẹp
+                with st.container():
+                    st.markdown('<div class="jill-card">', unsafe_allow_html=True)
+                    st.markdown(script_text)
+                    st.markdown('</div>', unsafe_allow_html=True)
                 
                 # Gợi ý khuyến mại
                 st.markdown("### 🎁 Chương Trình Khuyến Mại Phù Hợp")
