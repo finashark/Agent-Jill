@@ -2127,7 +2127,15 @@ if uploaded_file is not None:
             
             if 'error' not in analysis_result:
                 trader_type = analysis_result['trader_type']
-                trader_info = st.session_state.jill.knowledge_base['trader_types'][trader_type]
+                
+                # Safe access to knowledge_base with fallback
+                if trader_type in st.session_state.jill.knowledge_base['trader_types']:
+                    trader_info = st.session_state.jill.knowledge_base['trader_types'][trader_type]
+                else:
+                    # Fallback to default if trader_type not found
+                    st.warning(f"⚠️ Trader type '{trader_type}' not found in knowledge base. Using technical_trader as fallback.")
+                    trader_info = st.session_state.jill.knowledge_base['trader_types']['technical_trader']
+                    trader_type = 'technical_trader'
                 
                 # Hiển thị kết quả phân tích
                 st.markdown('<div class="analysis-card">', unsafe_allow_html=True)
