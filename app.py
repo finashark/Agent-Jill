@@ -803,7 +803,7 @@ Hãy trả lời JSON:
                 },
                 'analysis': ai_analysis,
                 'metrics': trading_metrics,
-                'knowledge_base': self.knowledge_base.get('trader_types', {}).get(trader_type, {})
+                'knowledge_base': self.personality["knowledge_base"].get('trader_types', {}).get(trader_type, {})
             }
             
             # Tạo prompt chi tiết cho Google Gemini
@@ -2129,12 +2129,12 @@ if uploaded_file is not None:
                 trader_type = analysis_result['trader_type']
                 
                 # Safe access to knowledge_base with fallback
-                if trader_type in st.session_state.jill.knowledge_base['trader_types']:
-                    trader_info = st.session_state.jill.knowledge_base['trader_types'][trader_type]
+                if trader_type in st.session_state.jill.personality["knowledge_base"]['trader_types']:
+                    trader_info = st.session_state.jill.personality["knowledge_base"]['trader_types'][trader_type]
                 else:
                     # Fallback to default if trader_type not found
                     st.warning(f"⚠️ Trader type '{trader_type}' not found in knowledge base. Using technical_trader as fallback.")
-                    trader_info = st.session_state.jill.knowledge_base['trader_types']['technical_trader']
+                    trader_info = st.session_state.jill.personality["knowledge_base"]['trader_types']['technical_trader']
                     trader_type = 'technical_trader'
                 
                 # Hiển thị kết quả phân tích
