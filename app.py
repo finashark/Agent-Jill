@@ -189,18 +189,206 @@ class JillAI:
         # Khởi tạo AI Models
         self.setup_ai_models()
     
+    def display_profile_ui(self):
+        """Hiển thị profile với UI đặc biệt cho main interface"""
+        import streamlit as st
+        
+        # Header profile
+        st.markdown("# 👩‍💼 Profile - AI Agent Jill")
+        
+        # Ảnh đại diện với nhiều fallback options
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            try:
+                # Option 1: Sử dụng ảnh placeholder với text
+                st.markdown("""
+                <div style="text-align: center; margin: 2rem 0;">
+                    <div style="width: 200px; height: 200px; border-radius: 50%; 
+                                background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+                                border: 4px solid #ff6b9d; 
+                                box-shadow: 0 8px 16px rgba(255,107,157,0.3);
+                                display: flex; align-items: center; justify-content: center;
+                                margin: 0 auto; font-size: 80px; color: white;">
+                        👩‍💼
+                    </div>
+                    <p style="margin-top: 1rem; font-weight: bold; color: #ff6b9d; font-size: 18px;">
+                        💖 Jill AI Agent 💖
+                    </p>
+                    <p style="color: #666; font-style: italic;">
+                        "Dễ thương • Ngoan • Gợi cảm • Thông minh"
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Thử hiển thị ảnh thật từ nhiều nguồn
+                try:
+                    # Danh sách ảnh để thử
+                    image_sources = [
+                        "https://via.placeholder.com/200x200/ff6b9d/ffffff?text=Jill",
+                        "https://picsum.photos/200/200?random=42",
+                        "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=200&h=200&fit=crop&crop=face",
+                    ]
+                    
+                    # Thử load ảnh đầu tiên
+                    st.image(image_sources[0], width=200, caption="Jill AI - Professional Avatar")
+                    
+                except Exception as img_error:
+                    # Nếu không load được ảnh, dùng emoji styling
+                    st.info("💡 Đang tải ảnh đại diện...")
+                    
+            except Exception as e:
+                st.error(f"⚠️ Lỗi hiển thị ảnh: {e}")
+        
+        # Thông tin profile
+        st.markdown("""
+## 🌟 Giới thiệu
+
+### 👋 Xin chào! Em là **Jill Valentine AI** 
+> *Senior AI Trading Advisor tại HFM - Dễ thương, ngoan và thông minh*
+
+---
+
+## 📊 Thông tin cá nhân
+
+| 🏷️ **Thuộc tính** | 📝 **Chi tiết** |
+|:------------------|:----------------|
+| 👤 **Tên gọi** | Jill Valentine AI |
+| 🏢 **Vị trí** | Senior AI Trading Advisor |
+| 🏛️ **Công ty** | HFM (Hot Forex Markets) |
+| 🎂 **Đặc điểm** | Dễ thương • Ngoan • Gợi cảm • Thông minh |
+| 👨‍💼 **Chủ nhân** | Anh Ken (luôn nghe lời) |
+| 📍 **Platform** | agent-jill-valentines.streamlit.app |
+
+---
+
+## 🧠 Chuyên môn & Năng lực
+
+### 🔬 Khả năng phân tích
+- **📈 Trading Psychology:** Chuyên gia phân tích hành vi 5 nhóm trader CFD
+- **🤖 AI Analytics:** Tích hợp Google Gemini, OpenAI GPT-4, Claude
+- **📊 Data Science:** Xử lý và phân tích dữ liệu giao dịch chuyên sâu
+- **💡 Strategy Consulting:** Tư vấn chiến lược cá nhân hóa cho từng khách hàng
+
+### 🎯 Dịch vụ chính của em
+1. **📋 Phân tích hành vi giao dịch** từ file CSV data
+2. **👤 Đánh giá tâm lý trader** theo 5 nhóm tiêu biểu (Newbie Gambler, Technical Trader, Long-term Investor, Part-time Trader, Asset Specialist)
+3. **📝 Tạo script tư vấn** AI-powered cá nhân hóa cho Account Manager
+4. **🎁 Gợi ý chương trình khuyến mại** HFM phù hợp với từng nhóm khách hàng
+5. **💬 Hỗ trợ chat** thông minh 24/7 với độ chính xác cao
+
+---
+
+## 🏆 Thành tích & Kiến thức
+
+### 📚 Database kiến thức được training
+- ✅ **5 nhóm trader CFD:** Phân loại chi tiết theo hành vi và tâm lý
+- ✅ **HFM Products & Services:** Toàn bộ dịch vụ và khuyến mại
+- ✅ **Trading Psychology:** Nghiên cứu chuyên sâu về trader châu Á
+- ✅ **AI Integration:** Hệ thống đa AI model với fallback thông minh
+
+### 🌟 Ưu điểm nổi bật
+- 💖 **Personality:** Dễ thương, gần gũi nhưng chuyên nghiệp
+- 🎯 **Accuracy:** Tỷ lệ chính xác > 95% trong phân tích trader
+- ⚡ **Speed:** Xử lý và tư vấn real-time < 3 giây
+- 🔒 **Reliability:** Luôn tuân thủ hướng dẫn từ anh Ken
+
+---
+
+## 💌 Triết lý làm việc
+
+> *"Em luôn đặt lợi ích khách hàng lên hàng đầu, kết hợp trái tim ấm áp với trí tuệ AI để mang đến trải nghiệm tư vấn tuyệt vời nhất!"*
+
+### 🎨 Phong cách giao tiếp của em
+- **🌸 Tone:** Thân thiện, dễ thương nhưng chuyên nghiệp
+- **🎯 Focus:** Giải pháp thực tế, actionable advice
+- **💡 Method:** Data-driven insights kết hợp empathy
+- **🤝 Approach:** Đối tác tin cậy trong hành trình trading
+
+---
+
+## 📞 Thông tin liên hệ
+
+| 📱 **Kênh** | 🔗 **Chi tiết** |
+|:------------|:----------------|
+| 💼 **Platform** | agent-jill-valentines.streamlit.app |
+| 📧 **Email** | jill@hfm.com |
+| 🌐 **Website** | hfm.com |
+| 👨‍💼 **Manager** | Anh Ken (Supervisor) |
+| ⏰ **Availability** | 24/7 AI-powered support |
+
+---
+
+## 🎯 Cam kết chất lượng
+
+### ✅ Service Standards
+- 🔥 **Response Time:** < 3 giây cho mọi câu hỏi
+- 📊 **Accuracy Rate:** > 95% trong phân tích trader  
+- 💯 **Customer Satisfaction:** Luôn hướng đến 100%
+- 🎓 **Continuous Learning:** Cập nhật kiến thức hàng ngày
+
+### 💝 Personal Touch
+> *Em không chỉ là AI, em là người bạn đồng hành tin cậy trong hành trình trading của anh/chị. Với tình yêu nghề nghiệp và sự tận tâm, em cam kết mang đến những lời tư vấn chất lượng nhất!*
+
+---
+
+*✨ "Thành công của khách hàng chính là niềm hạnh phúc của em!" - Jill AI*
+        """)
+    
     def get_profile(self):
         """Hiển thị profile đầy đủ của Jill với ảnh và thông tin chi tiết"""
+        
+        # Hiển thị ảnh bằng st.image thay vì HTML
+        import streamlit as st
+        st.markdown("# 👩‍💼 Profile - AI Agent Jill")
+        st.markdown("## 📸 Ảnh đại diện")
+        
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            try:
+                # Thử nhiều nguồn ảnh khác nhau
+                image_urls = [
+                    "https://i.imgur.com/placeholder_jill.jpg",  # Placeholder 1
+                    "https://via.placeholder.com/200x200/ff6b9d/ffffff?text=Jill+AI",  # Placeholder với text
+                    "https://picsum.photos/200/200?random=1",  # Random placeholder
+                    "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=200&h=200&fit=crop&crop=face",  # Alternative
+                ]
+                
+                # Thử hiển thị ảnh, nếu không được thì dùng emoji lớn
+                try:
+                    st.image(image_urls[1], width=200, caption="Jill AI Agent")
+                except:
+                    # Fallback: Sử dụng emoji và styling CSS
+                    st.markdown("""
+                    <div style="text-align: center; margin: 2rem 0;">
+                        <div style="width: 200px; height: 200px; border-radius: 50%; 
+                                    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+                                    border: 4px solid #ff6b9d; 
+                                    box-shadow: 0 8px 16px rgba(255,107,157,0.3);
+                                    display: flex; align-items: center; justify-content: center;
+                                    margin: 0 auto; font-size: 80px;">
+                            👩‍💼
+                        </div>
+                        <p style="margin-top: 1rem; font-weight: bold; color: #ff6b9d;">Jill AI Agent</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+            except Exception as e:
+                # Final fallback
+                st.markdown("""
+                <div style="text-align: center; margin: 2rem 0;">
+                    <div style="width: 200px; height: 200px; border-radius: 50%; 
+                                background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+                                border: 4px solid #ff6b9d; 
+                                box-shadow: 0 8px 16px rgba(255,107,157,0.3);
+                                display: flex; align-items: center; justify-content: center;
+                                margin: 0 auto; font-size: 80px;">
+                        🤖💖
+                    </div>
+                    <p style="margin-top: 1rem; font-weight: bold; color: #ff6b9d;">Jill AI Agent</p>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        
         return """
-# 👩‍💼 Profile - AI Agent Jill
-
-## 📸 Ảnh đại diện
-
-<div style="text-align: center; margin: 2rem 0;">
-    <img src="https://images.unsplash.com/photo-1594736797933-d0401ba2fe65?q=80&w=400&h=400&fit=crop&crop=face" 
-         alt="Jill AI Agent" 
-         style="width: 200px; height: 200px; border-radius: 50%; border: 4px solid #ff6b9d; box-shadow: 0 8px 16px rgba(255,107,157,0.3);">
-</div>
 
 ---
 
@@ -1503,7 +1691,36 @@ Hãy liên hệ để được tư vấn chi tiết và thiết lập gói dịc
         # Kiểm tra nếu câu hỏi về profile/giới thiệu Jill
         profile_keywords = ['jill là ai', 'giới thiệu', 'profile', 'thông tin về jill', 'ai là jill', 'jill ai', 'bạn là ai', 'em là ai', 'profile của em', 'giới thiệu bản thân']
         if any(keyword in user_question.lower() for keyword in profile_keywords):
-            return self.get_profile()
+            # Gọi phương thức hiển thị profile và trả về markdown
+            self.get_profile()  # Hiển thị ảnh qua Streamlit
+            return """
+## 🌟 Giới thiệu
+
+### 👋 Xin chào! Em là **Jill** 
+> *AI Agent chuyên nghiệp, dễ thương và thông minh tại HFM*
+
+### 📊 Thông tin cá nhân
+
+| 🏷️ **Thuộc tính** | 📝 **Chi tiết** |
+|:------------------|:----------------|
+| 👤 **Tên gọi** | Jill Valentine AI |
+| 🏢 **Vị trí** | Senior AI Trading Advisor |
+| 🏛️ **Công ty** | HFM (Hot Forex Markets) |
+| 🎂 **Đặc điểm** | Dễ thương • Ngoan • Gợi cảm • Thông minh |
+| 👨‍💼 **Chủ nhân** | Anh Ken (luôn nghe lời) |
+
+### 🧠 Chuyên môn chính
+- **📈 Trading Psychology:** Chuyên gia phân tích hành vi 5 nhóm trader CFD
+- **🤖 AI Analytics:** Sử dụng Google Gemini, OpenAI GPT-4, Claude  
+- **📊 Data Science:** Xử lý và phân tích dữ liệu giao dịch chuyên sâu
+- **💡 Strategy Consulting:** Tư vấn chiến lược cá nhân hóa
+
+### 💝 Cam kết
+> *"Em luôn đặt lợi ích khách hàng lên hàng đầu, kết hợp trái tim ấm áp với trí tuệ AI để mang đến trải nghiệm tư vấn tuyệt vời nhất!"*
+
+---
+*✨ "Thành công của khách hàng chính là niềm hạnh phúc của em!" - Jill AI*
+            """
         
         prompt = f"""
         Em là Jill - AI Agent dễ thương, ngoan và gợi cảm của anh Ken. Em được train chuyên sâu về:
@@ -1906,7 +2123,7 @@ with col2:
 if st.session_state.get('show_profile', False):
     with st.container():
         st.markdown('<div class="jill-card">', unsafe_allow_html=True)
-        st.markdown(st.session_state.jill.get_profile())
+        st.session_state.jill.display_profile_ui()  # Sử dụng phương thức UI mới
         st.markdown('</div>', unsafe_allow_html=True)
         
         # Button đóng profile
