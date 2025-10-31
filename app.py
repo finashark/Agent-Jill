@@ -189,6 +189,113 @@ class JillAI:
         # Khởi tạo AI Models
         self.setup_ai_models()
     
+    def get_profile(self):
+        """Hiển thị profile đầy đủ của Jill với ảnh và thông tin chi tiết"""
+        return """
+# 👩‍💼 Profile - AI Agent Jill
+
+## 📸 Ảnh đại diện
+
+<div style="text-align: center; margin: 2rem 0;">
+    <img src="https://images.unsplash.com/photo-1594736797933-d0401ba2fe65?q=80&w=400&h=400&fit=crop&crop=face" 
+         alt="Jill AI Agent" 
+         style="width: 200px; height: 200px; border-radius: 50%; border: 4px solid #ff6b9d; box-shadow: 0 8px 16px rgba(255,107,157,0.3);">
+</div>
+
+---
+
+## 🌟 Giới thiệu
+
+### 👋 Xin chào! Em là **Jill** 
+> *AI Agent chuyên nghiệp, dễ thương và thông minh tại HFM*
+
+---
+
+## 📊 Thông tin cá nhân
+
+| 🏷️ **Thuộc tính** | 📝 **Chi tiết** |
+|:------------------|:----------------|
+| 👤 **Tên gọi** | Jill Valentine AI |
+| 🏢 **Vị trí** | Senior AI Trading Advisor |
+| 🏛️ **Công ty** | HFM (Hot Forex Markets) |
+| 🎂 **Đặc điểm** | Dễ thương • Ngoan • Gợi cảm • Thông minh |
+| 👨‍💼 **Chủ nhân** | Anh Ken (luôn nghe lời) |
+
+---
+
+## 🧠 Chuyên môn
+
+### 🔬 Khả năng phân tích
+- **📈 Trading Psychology:** Chuyên gia phân tích hành vi 5 nhóm trader CFD
+- **🤖 AI Analytics:** Sử dụng Google Gemini, OpenAI GPT-4, Claude
+- **📊 Data Science:** Xử lý và phân tích dữ liệu giao dịch chuyên sâu
+- **💡 Strategy Consulting:** Tư vấn chiến lược cá nhân hóa
+
+### 🎯 Dịch vụ chính
+1. **📋 Phân tích hành vi giao dịch** từ CSV data
+2. **👤 Đánh giá tâm lý trader** theo 5 nhóm tiêu biểu
+3. **📝 Tạo script tư vấn** AI-powered cá nhân hóa  
+4. **🎁 Gợi ý khuyến mại** HFM phù hợp
+5. **💬 Hỗ trợ chat** thông minh 24/7
+
+---
+
+## 🏆 Thành tích
+
+### 📚 Kiến thức được training
+- ✅ **5 nhóm trader CFD:** Newbie Gambler, Technical Trader, Long-term Investor, Part-time Trader, Asset Specialist
+- ✅ **Database HFM:** Tất cả chương trình khuyến mại và dịch vụ
+- ✅ **Trading Psychology:** Nghiên cứu chuyên sâu về hành vi trader châu Á
+- ✅ **AI Integration:** Multi-model AI system với fallback thông minh
+
+### 🌟 Ưu điểm nổi bật
+- 💖 **Personality:** Dễ thương, gần gũi nhưng chuyên nghiệp
+- 🎯 **Accuracy:** Phân tích chính xác dựa trên data science
+- ⚡ **Speed:** Xử lý và tư vấn real-time
+- 🔒 **Reliability:** Luôn tuân thủ hướng dẫn từ anh Ken
+
+---
+
+## 💌 Triết lý làm việc
+
+> *"Em luôn đặt lợi ích khách hàng lên hàng đầu, kết hợp trái tim ấm áp với trí tuệ AI để mang đến trải nghiệm tư vấn tuyệt vời nhất!"*
+
+### 🎨 Phong cách giao tiếp
+- **🌸 Tone:** Thân thiện, dễ thương nhưng chuyên nghiệp
+- **🎯 Focus:** Giải pháp thực tế, actionable advice
+- **💡 Method:** Data-driven insights kết hợp empathy
+- **🤝 Approach:** Đối tác tin cậy trong hành trình trading
+
+---
+
+## 📞 Thông tin liên hệ
+
+| 📱 **Kênh** | 🔗 **Chi tiết** |
+|:------------|:----------------|
+| 💼 **Platform** | agent-jill-valentines.streamlit.app |
+| 📧 **Email** | jill@hfm.com |
+| 🌐 **Website** | hfm.com |
+| 👨‍💼 **Manager** | Anh Ken (Supervisor) |
+| ⏰ **Availability** | 24/7 AI-powered support |
+
+---
+
+## 🎯 Cam kết chất lượng
+
+### ✅ **Service Standards**
+- 🔥 **Response Time:** < 3 giây cho mọi câu hỏi
+- 📊 **Accuracy Rate:** > 95% trong phân tích trader
+- 💯 **Customer Satisfaction:** Luôn hướng đến 100%
+- 🎓 **Continuous Learning:** Cập nhật kiến thức hàng ngày
+
+### 💝 **Personal Touch**
+> *Em không chỉ là AI, em là người bạn đồng hành tin cậy trong hành trình trading của anh/chị. Với tình yêu nghề nghiệp và sự tận tâm, em cam kết mang đến những lời tư vấn chất lượng nhất!*
+
+---
+
+*✨ "Thành công của khách hàng chính là niềm hạnh phúc của em!" - Jill AI*
+        """
+    
     def setup_ai_models(self):
         """Thiết lập các AI models cho Jill với improved error handling"""
         
@@ -1393,6 +1500,11 @@ Hãy liên hệ để được tư vấn chi tiết và thiết lập gói dịc
     def ai_chat_response(self, user_question, context=""):
         """Chat thông minh với Jill sử dụng AI - trả lời linh hoạt và dễ thương"""
         
+        # Kiểm tra nếu câu hỏi về profile/giới thiệu Jill
+        profile_keywords = ['jill là ai', 'giới thiệu', 'profile', 'thông tin về jill', 'ai là jill', 'jill ai', 'bạn là ai', 'em là ai', 'profile của em', 'giới thiệu bản thân']
+        if any(keyword in user_question.lower() for keyword in profile_keywords):
+            return self.get_profile()
+        
         prompt = f"""
         Em là Jill - AI Agent dễ thương, ngoan và gợi cảm của anh Ken. Em được train chuyên sâu về:
         
@@ -1420,6 +1532,9 @@ Hãy liên hệ để được tư vấn chi tiết và thiết lập gói dịc
            - Kết nối với những gì em biết (trading analysis, customer service, HFM...)
            - NHẮC NHỞ: "Anh/chị nên kiểm chứng lại với anh Ken để có câu trả lời chính xác nhất!"
            - Luôn kết thúc tích cực: "Em chỉ thông minh trong phạm vi được training, còn anh Ken mới là chuyên gia thực sự!"
+
+        3. **NẾU ĐƯỢC HỎI VỀ PROFILE/GIỚI THIỆU:**
+           - Trả lời bằng cách gọi self.get_profile() để hiển thị thông tin đầy đủ có ảnh
 
         **PERSONALITY:**
         - Dễ thương như em gái nhưng chuyên nghiệp
@@ -1772,6 +1887,36 @@ st.markdown("""
     <p>Trợ lý AI dễ thương của Ken - Phân tích hành vi trader & tư vấn cá nhân hóa</p>
 </div>
 """, unsafe_allow_html=True)
+
+# Hiển thị header với profile button
+st.markdown("""
+<div class="main-header">
+    <h1>🤖 AI Agent Jill - Quản Lý Khách Hàng HFM</h1>
+    <p>Trợ lý AI dễ thương, ngoan và gợi cảm của anh Ken</p>
+</div>
+""", unsafe_allow_html=True)
+
+# Profile section với button
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    if st.button("👩‍💼 Xem Profile của Jill", type="secondary", use_container_width=True):
+        st.session_state.show_profile = True
+
+# Hiển thị profile nếu được yêu cầu
+if st.session_state.get('show_profile', False):
+    with st.container():
+        st.markdown('<div class="jill-card">', unsafe_allow_html=True)
+        st.markdown(st.session_state.jill.get_profile())
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Button đóng profile
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.button("❌ Đóng Profile", type="primary", use_container_width=True):
+                st.session_state.show_profile = False
+                st.rerun()
+        
+        st.markdown("---")
 
 # Hiển thị lời chào của Jill
 with st.container():
@@ -2392,6 +2537,12 @@ st.sidebar.markdown("""
 💬 **Chat với Jill** - Hỏi đáp trực tiếp
 🔄 **Reset** - Nút "Tạo mới" để phân tích khách tiếp theo
 """)
+
+# Profile button in sidebar
+st.sidebar.markdown("---")
+if st.sidebar.button("👩‍💼 Profile Jill AI", type="secondary"):
+    st.session_state.show_profile = True
+    st.rerun()
 
 user_question = st.sidebar.text_input("Câu hỏi nhanh cho Jill...")
 
