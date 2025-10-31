@@ -220,17 +220,13 @@ class JillAI:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # Thử hiển thị ảnh thật từ nhiều nguồn
+                # Hiển thị ảnh Jill từ postimg.cc
                 try:
-                    # Danh sách ảnh để thử
-                    image_sources = [
-                        "https://via.placeholder.com/200x200/ff6b9d/ffffff?text=Jill",
-                        "https://picsum.photos/200/200?random=42",
-                        "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=200&h=200&fit=crop&crop=face",
-                    ]
+                    # Sử dụng ảnh chính thức của Jill
+                    jill_image_url = "https://i.postimg.cc/wvH5N2HF/Agent-Jill.png"
                     
-                    # Thử load ảnh đầu tiên
-                    st.image(image_sources[0], width=200, caption="Jill AI - Professional Avatar")
+                    # Hiển thị ảnh với styling đẹp
+                    st.image(jill_image_url, width=200, caption="💖 Jill AI Agent - Dễ thương & Chuyên nghiệp 💖")
                     
                 except Exception as img_error:
                     # Nếu không load được ảnh, dùng emoji styling
@@ -345,17 +341,12 @@ class JillAI:
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             try:
-                # Thử nhiều nguồn ảnh khác nhau
-                image_urls = [
-                    "https://i.imgur.com/placeholder_jill.jpg",  # Placeholder 1
-                    "https://via.placeholder.com/200x200/ff6b9d/ffffff?text=Jill+AI",  # Placeholder với text
-                    "https://picsum.photos/200/200?random=1",  # Random placeholder
-                    "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=200&h=200&fit=crop&crop=face",  # Alternative
-                ]
+                # Sử dụng ảnh chính thức của Jill từ postimg.cc
+                jill_image_url = "https://i.postimg.cc/wvH5N2HF/Agent-Jill.png"
                 
-                # Thử hiển thị ảnh, nếu không được thì dùng emoji lớn
+                # Hiển thị ảnh chính thức của Jill
                 try:
-                    st.image(image_urls[1], width=200, caption="Jill AI Agent")
+                    st.image(jill_image_url, width=200, caption="💖 Jill AI Agent 💖")
                 except:
                     # Fallback: Sử dụng emoji và styling CSS
                     st.markdown("""
