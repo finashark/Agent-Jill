@@ -2094,14 +2094,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Hiển thị header với profile button
-st.markdown("""
-<div class="main-header">
-    <h1>🤖 AI Agent Jill - HFM Trading Assistant</h1>
-    <p>Trợ lý AI dễ thương, ngoan và gợi cảm của anh Ken</p>
-</div>
-""", unsafe_allow_html=True)
-
 # Profile section với button
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
