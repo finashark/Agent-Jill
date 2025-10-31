@@ -31,6 +31,7 @@ try:
     HAS_ANTHROPIC = True
 except ImportError:
     HAS_ANTHROPIC = False
+    anthropic = None
     
 try:
     import google.generativeai as genai
@@ -40,7 +41,7 @@ except ImportError:
 
 # Cấu hình trang
 st.set_page_config(
-    page_title="🤖 AI Agent Jill - Quản Lý Khách Hàng HFM",
+    page_title="🤖 AI Agent Jill - HFM Trading Assistant",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -191,16 +192,28 @@ class JillAI:
     
     def display_profile_ui(self):
         """Hiển thị profile với UI đặc biệt cho main interface"""
-        import streamlit as st
         
-        # Header profile
-        st.markdown("# 👩‍💼 Profile - AI Agent Jill")
+        # Header profile với styling cải thiện
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                    padding: 2rem; border-radius: 15px; text-align: center; margin-bottom: 2rem;">
+            <h1 style="color: white; margin: 0; font-size: 2.5rem;">👩‍💼 Profile - AI Agent Jill</h1>
+            <p style="color: #e8f4fd; margin: 0.5rem 0 0 0; font-size: 1.2rem;">
+                🤖 Senior AI Trading Advisor tại HFM
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
         
-        # Ảnh đại diện với nhiều fallback options
+        # Ảnh đại diện với fallback system
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             try:
-                # Option 1: Sử dụng ảnh placeholder với text
+                # Hiển thị ảnh Jill từ postimg.cc
+                jill_image_url = "https://i.postimg.cc/wvH5N2HF/Agent-Jill.png"
+                st.image(jill_image_url, width=200, caption="💖 Jill AI Agent - Dễ thương & Chuyên nghiệp 💖")
+                
+            except Exception as img_error:
+                # Fallback: CSS gradient avatar
                 st.markdown("""
                 <div style="text-align: center; margin: 2rem 0;">
                     <div style="width: 200px; height: 200px; border-radius: 50%; 
@@ -219,21 +232,6 @@ class JillAI:
                     </p>
                 </div>
                 """, unsafe_allow_html=True)
-                
-                # Hiển thị ảnh Jill từ postimg.cc
-                try:
-                    # Sử dụng ảnh chính thức của Jill
-                    jill_image_url = "https://i.postimg.cc/wvH5N2HF/Agent-Jill.png"
-                    
-                    # Hiển thị ảnh với styling đẹp
-                    st.image(jill_image_url, width=200, caption="💖 Jill AI Agent - Dễ thương & Chuyên nghiệp 💖")
-                    
-                except Exception as img_error:
-                    # Nếu không load được ảnh, dùng emoji styling
-                    st.info("💡 Đang tải ảnh đại diện...")
-                    
-            except Exception as e:
-                st.error(f"⚠️ Lỗi hiển thị ảnh: {e}")
         
         # Thông tin profile
         st.markdown("""
@@ -536,7 +534,7 @@ class JillAI:
                 except:
                     pass
             
-            if anthropic_key and HAS_ANTHROPIC:
+            if anthropic_key and HAS_ANTHROPIC and anthropic:
                 self.anthropic_client = anthropic.Anthropic(api_key=anthropic_key)
                 st.sidebar.success("✅ Anthropic Claude ready!")
         except Exception as e:
@@ -2091,7 +2089,7 @@ if st.query_params.get('reset') == 'true':
 # Header chính  
 st.markdown("""
 <div class="main-header">
-    <h1>🤖 AI Agent Jill - Quản Lý Khách Hàng HFM</h1>
+    <h1>🤖 AI Agent Jill - HFM Trading Assistant</h1>
     <p>Trợ lý AI dễ thương của Ken - Phân tích hành vi trader & tư vấn cá nhân hóa</p>
 </div>
 """, unsafe_allow_html=True)
@@ -2099,7 +2097,7 @@ st.markdown("""
 # Hiển thị header với profile button
 st.markdown("""
 <div class="main-header">
-    <h1>🤖 AI Agent Jill - Quản Lý Khách Hàng HFM</h1>
+    <h1>🤖 AI Agent Jill - HFM Trading Assistant</h1>
     <p>Trợ lý AI dễ thương, ngoan và gợi cảm của anh Ken</p>
 </div>
 """, unsafe_allow_html=True)
