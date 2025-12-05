@@ -1,0 +1,92 @@
+# Config for form fields structure
+form_fields:
+  basic_info:
+    - name: "name"
+      label: "Tên khách hàng"
+      type: "text"
+      required: true
+    
+    - name: "age"
+      label: "Tuổi"
+      type: "number"
+      min: 18
+      max: 100
+      default: 35
+      required: true
+    
+    - name: "gender"
+      label: "Giới tính"
+      type: "select"
+      options: ["Nam", "Nữ", "Khác"]
+      required: true
+    
+    - name: "education"
+      label: "Học vấn"
+      type: "select"
+      options: ["Phổ thông", "Trung cấp", "Đại học", "Sau đại học"]
+      required: true
+  
+  financial_info:
+    - name: "income"
+      label: "Thu nhập năm (USD)"
+      type: "select"
+      options: ["< $10,000", "$10,000 - $50,000", "$50,000 - $100,000", "> $100,000"]
+      required: true
+    
+    - name: "capital"
+      label: "Vốn giao dịch (USD)"
+      type: "number"
+      min: 100
+      max: 1000000
+      default: 5000
+      required: true
+  
+  experience_goals:
+    - name: "experience"
+      label: "Kinh nghiệm trading"
+      type: "select"
+      options: ["< 6 tháng", "6 tháng - 1 năm", "1 - 3 năm", "> 3 năm"]
+      required: true
+    
+    - name: "goals"
+      label: "Mục tiêu đầu tư"
+      type: "multiselect"
+      options: 
+        - "Thu nhập đều đặn"
+        - "Tăng trưởng vốn nhanh"
+        - "Bảo toàn tài sản"
+        - "Học hỏi & thử nghiệm"
+        - "Giải trí"
+      required: true
+  
+  self_assessment:
+    - name: "risk_tolerance"
+      label: "Mức độ chấp nhận rủi ro"
+      type: "slider"
+      min: 1
+      max: 10
+      default: 5
+      help_text: "1 = Rất thận trọng, 10 = Rất mạo hiểm"
+      required: true
+    
+    - name: "available_time"
+      label: "Thời gian theo dõi thị trường mỗi ngày"
+      type: "select"
+      options: ["< 1 giờ", "1 - 3 giờ", "3 - 6 giờ", "> 6 giờ"]
+      required: true
+
+validation_rules:
+  name:
+    min_length: 2
+    max_length: 100
+  
+  age:
+    min: 18
+    max: 100
+  
+  capital:
+    min: 100
+    max: 10000000
+  
+  goals:
+    min_selections: 1

@@ -1,0 +1,151 @@
+# Advisory Rules by Trader Type
+
+newbie_gambler:
+  strengths:
+    - "Nhiệt huyết và sẵn sàng học hỏi"
+    - "Năng động trong giao dịch"
+    - "Có tiềm năng phát triển cao nếu được hướng dẫn đúng"
+  
+  weaknesses:
+    - "Thiếu kinh nghiệm và kiến thức nền tảng"
+    - "Dễ bị cảm xúc chi phối"
+    - "Rủi ro quá mức, thiếu quản lý vốn"
+    - "Không đặt stop loss nhất quán"
+    - "Có xu hướng overtrading"
+  
+  recommendations:
+    - "📚 Tham gia các khóa học trading cơ bản về quản lý rủi ro"
+    - "📉 Giảm khối lượng giao dịch xuống 50% để tập trung chất lượng"
+    - "🛡️ LUÔN đặt stop loss trước khi vào lệnh (không ngoại lệ)"
+    - "📊 Quy tắc: Không rủi ro quá 2% tài khoản cho mỗi lệnh"
+    - "💪 Sử dụng tài khoản demo ít nhất 3 tháng để thực hành"
+    - "📝 Ghi nhật ký giao dịch chi tiết để rút kinh nghiệm"
+    - "⏰ Đặt giới hạn tối đa 5-10 lệnh mỗi ngày"
+    - "📖 Đọc sách: 'Trading in the Zone' by Mark Douglas"
+  
+  risk_warnings:
+    - "🚨 NGUY CƠ CHÁY TÀI KHOẢN rất cao do overtrading và poor risk management"
+    - "🚨 Dễ rơi vào bẫy tự tin thái quá sau vài lần thắng may mắn"
+    - "🚨 Tâm lý FOMO (sợ bỏ lỡ) có thể dẫn đến quyết định sai lầm nghiêm trọng"
+    - "🚨 Không nên sử dụng đòn bẩy cao (leverage > 1:10) trong giai đoạn này"
+
+technical_trader:
+  strengths:
+    - "Có hệ thống giao dịch rõ ràng và được test"
+    - "Kỷ luật tốt trong quản lý rủi ro"
+    - "Hiểu biết sâu về phân tích kỹ thuật"
+    - "Win rate ổn định cho thấy chiến lược hiệu quả"
+  
+  weaknesses:
+    - "Có thể quá tự tin vào hệ thống của mình"
+    - "Áp lực tâm lý cao khi giao dịch thường xuyên"
+    - "Nguy cơ burnout nếu không cân bằng cuộc sống"
+    - "Đôi khi bỏ qua tin tức cơ bản quan trọng"
+  
+  recommendations:
+    - "📊 Tiếp tục backtest chiến lược trên nhiều điều kiện thị trường"
+    - "🔧 Tối ưu hóa entry/exit rules để cải thiện risk/reward"
+    - "⏱️ Đặt giới hạn số lệnh mỗi ngày để tránh overtrading"
+    - "😌 Nghỉ ngơi tối thiểu 1 ngày/tuần để tránh burnout"
+    - "📰 Theo dõi lịch kinh tế để tránh trade trong tin tức lớn"
+    - "🌐 Đa dạng hóa sang 2-3 thị trường khác để giảm rủi ro"
+    - "📈 Sử dụng trailing stop để bảo vệ lợi nhuận"
+    - "💼 Xem xét tự động hóa một phần quy trình"
+  
+  risk_warnings:
+    - "🚨 Thị trường bất thường (black swan) có thể phá vỡ hệ thống kỹ thuật"
+    - "🚨 Cảnh giác với confirmation bias - chỉ nhìn thấy tín hiệu ủng hộ quan điểm"
+    - "🚨 Overconfidence sau chuỗi thắng dài có thể dẫn đến mất kỷ luật"
+    - "🚨 High frequency trading có thể làm tăng chi phí giao dịch đáng kể"
+
+long_term_investor:
+  strengths:
+    - "Tầm nhìn dài hạn và kiên nhẫn"
+    - "Đa dạng hóa danh mục tốt"
+    - "Quản lý rủi ro thận trọng và bài bản"
+    - "Ít bị ảnh hưởng bởi biến động ngắn hạn"
+  
+  weaknesses:
+    - "Có thể bỏ lỡ cơ hội ngắn hạn sinh lời"
+    - "Phí swap qua đêm ăn mòn lợi nhuận"
+    - "Phản ứng chậm với thay đổi xu hướng dài hạn"
+  
+  recommendations:
+    - "📈 Tiếp tục chiến lược buy-and-hold với các tài sản chất lượng"
+    - "🔄 Rebalance danh mục mỗi quý để duy trì phân bổ tối ưu"
+    - "📊 Theo dõi các chỉ số kinh tế vĩ mô (GDP, lạm phát, lãi suất)"
+    - "💼 Xem xét thêm bonds và commodities để đa dạng hóa"
+    - "📚 Đọc báo cáo tài chính và phân tích cơ bản định kỳ"
+    - "🛡️ Sử dụng hedging strategies khi cần bảo vệ danh mục"
+    - "💰 Dollar-cost averaging để giảm rủi ro timing"
+  
+  risk_warnings:
+    - "🚨 Biến động lớn ngắn hạn có thể gây hoảng loạn nếu không chuẩn bị tâm lý"
+    - "🚨 Phí swap tích lũy có thể đáng kể với vị thế dài hạn"
+    - "🚨 Black swan events (chiến tranh, khủng hoảng) có thể gây thiệt hại lớn"
+    - "🚨 Inflation risk - lạm phát có thể ăn mòn giá trị thực"
+
+part_time:
+  strengths:
+    - "Cân bằng tốt giữa công việc chính và trading"
+    - "Thực dụng và linh hoạt trong quyết định"
+    - "Ít bị stress do không phụ thuộc hoàn toàn vào trading"
+    - "Có thu nhập ổn định từ công việc chính"
+  
+  weaknesses:
+    - "Thời gian theo dõi thị trường hạn chế"
+    - "Có thể bỏ lỡ tin tức quan trọng trong ngày"
+    - "Khó phản ứng kịp với biến động đột ngột"
+    - "Thiếu thời gian để nghiên cứu sâu"
+  
+  recommendations:
+    - "⏰ Tập trung trading vào khung giờ cố định mỗi ngày"
+    - "🤖 Sử dụng alerts và notifications để không bỏ lỡ cơ hội"
+    - "📱 Cài đặt stop loss và take profit tự động"
+    - "📊 Ưu tiên swing trading thay vì scalping/day trading"
+    - "📝 Lập kế hoạch trading cho cả tuần vào cuối tuần"
+    - "🔔 Subscribe economic calendar để biết trước tin tức lớn"
+    - "💻 Xem xét copy trading hoặc robo-advisor để tối ưu thời gian"
+    - "📚 Học automation và scripting để tiết kiệm thời gian"
+  
+  risk_warnings:
+    - "🚨 Gap price khi thị trường mở cửa có thể vượt qua stop loss"
+    - "🚨 Không thể phản ứng kịp với flash crash hoặc tin tức đột ngột"
+    - "🚨 Bỏ lỡ các yếu tố fundamentals quan trọng do theo dõi không sát"
+    - "🚨 Overtrading vào cuối tuần để 'bù' thời gian bỏ lỡ"
+
+asset_specialist:
+  strengths:
+    - "Hiểu sâu về thị trường chuyên môn"
+    - "Nhận biết patterns và signals nhanh"
+    - "Theo dõi tin tức chuyên ngành sát sao"
+    - "Có network trong cộng đồng chuyên ngành"
+  
+  weaknesses:
+    - "Thiếu đa dạng hóa - rủi ro tập trung cao"
+    - "Phụ thuộc quá nhiều vào một thị trường"
+    - "Bỏ lỡ cơ hội ở các thị trường khác"
+    - "Correlation risk khi thị trường sụp đổ"
+  
+  recommendations:
+    - "🌐 Đa dạng hóa sang 2-3 tài sản liên quan (correlation thấp)"
+    - "📊 Phân bổ không quá 50-60% vốn vào tài sản chính"
+    - "🔍 Nghiên cứu correlation giữa các thị trường"
+    - "🛡️ Sử dụng hedging để bảo vệ vị thế chính"
+    - "📚 Mở rộng kiến thức sang thị trường bổ trợ"
+    - "💼 Xây dựng portfolio với nhiều asset classes"
+    - "📈 Theo dõi các leading indicators của thị trường chính"
+    - "🎓 Trở thành expert được công nhận (viết blog, teaching)"
+  
+  risk_warnings:
+    - "🚨 RỦI RO TẬP TRUNG: Nếu thị trường sụp đổ, toàn bộ portfolio bị ảnh hưởng"
+    - "🚨 Sector-specific risk - rủi ro ngành nghề cụ thể"
+    - "🚨 Regulatory risk - thay đổi luật pháp có thể tác động mạnh"
+    - "🚨 Thiếu diversification làm tăng volatility danh mục đáng kể"
+
+# General risk management rules (apply to all)
+general_rules:
+  risk_per_trade: 2  # Maximum % of account per trade
+  max_daily_loss: 5  # Maximum daily loss %
+  max_positions: 5   # Maximum concurrent positions
+  min_risk_reward: 1.5  # Minimum risk/reward ratio

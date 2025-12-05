@@ -1,0 +1,99 @@
+# Trader Profile Definitions
+
+trader_types:
+  newbie_gambler:
+    name: "Newbie Gambler"
+    description: "Trader mới bắt đầu với phong cách mạo hiểm cao"
+    characteristics:
+      capital: "Small"
+      experience: "Newbie/Beginner"
+      risk_appetite: "Aggressive"
+      win_rate: "< 45%"
+      discipline: "Low"
+      trading_frequency: "High"
+    
+    criteria:
+      capital_level: ["Small"]
+      experience_level: ["Newbie", "Beginner"]
+      risk_appetite: ["Aggressive"]
+      discipline_score: [0, 4]
+      win_rate: [0, 45]
+  
+  technical_trader:
+    name: "Technical Day/Swing Trader"
+    description: "Trader có kinh nghiệm sử dụng phân tích kỹ thuật"
+    characteristics:
+      capital: "Medium/Large"
+      experience: "Intermediate/Experienced"
+      risk_appetite: "Moderate/Aggressive"
+      win_rate: "50-60%"
+      discipline: "High"
+      trading_style: "Day Trading/Swing Trading"
+    
+    criteria:
+      experience_level: ["Intermediate", "Experienced"]
+      discipline_score: [6, 10]
+      win_rate: [50, 70]
+      trading_style: ["Day Trading", "Swing Trading"]
+  
+  long_term_investor:
+    name: "Long-term Value Investor"
+    description: "Nhà đầu tư dài hạn với tầm nhìn xa"
+    characteristics:
+      capital: "Large"
+      experience: "Any"
+      risk_appetite: "Conservative"
+      win_rate: "> 55%"
+      discipline: "High"
+      trading_style: "Position Trading"
+    
+    criteria:
+      capital_level: ["Large"]
+      risk_appetite: ["Conservative"]
+      trading_style: ["Position Trading"]
+      avg_holding_days: [7, 365]
+  
+  part_time:
+    name: "Part-time Opportunist"
+    description: "Trader bán thời gian cân bằng công việc chính"
+    characteristics:
+      capital: "Medium"
+      experience: "Beginner/Intermediate"
+      time_commitment: "Low/Very Low"
+      trading_style: "Swing Trading"
+      win_rate: "45-55%"
+    
+    criteria:
+      time_commitment: ["Low", "Very Low"]
+      trading_style: ["Swing Trading", "Day Trading"]
+      win_rate: [45, 60]
+  
+  asset_specialist:
+    name: "Asset Specialist Trader"
+    description: "Trader chuyên sâu vào một loại tài sản"
+    characteristics:
+      capital: "Any"
+      experience: "Intermediate/Experienced"
+      asset_concentration: "> 70%"
+      diversity_score: "Low"
+    
+    criteria:
+      asset_concentration: [70, 100]
+      diversity_score: [1, 3]
+
+# Classification weights
+classification_weights:
+  profile_data: 0.4  # 40% from user form
+  trading_behavior: 0.6  # 60% from CSV data
+
+# Confidence score factors
+confidence_factors:
+  profile_behavior_alignment: 0.5
+  data_completeness: 0.3
+  trading_history_length: 0.2
+
+# Minimum requirements for reliable classification
+min_requirements:
+  min_trades: 10
+  min_days: 7
+  min_profile_fields: 8
